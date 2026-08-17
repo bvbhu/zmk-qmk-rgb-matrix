@@ -125,3 +125,13 @@ endif()
 target_include_directories(${ZEPHYR_CURRENT_TARGET} PRIVATE
     ${ZMK_CONFIG}
 )
+
+# 模块源码包含路径（keymap.c 通过 rgb_matrix_generated_config.h → rgb_matrix_types.h
+# → rgb_matrix_effects.inc 触发 effect_runner_*.h 的编译，需要 animations/runners/）
+set(_RGB_MATRIX_MODULE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
+target_include_directories(${ZEPHYR_CURRENT_TARGET} PRIVATE
+    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix
+    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/controller
+    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/animations
+    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/animations/runners
+)

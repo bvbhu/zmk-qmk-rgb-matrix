@@ -9,8 +9,16 @@
 # - 键盘仓 config/ 目录（由 snippet 通过 PRIVATE 加入，包含 keymap.c）
 # - 生成的 rgb_matrix_generated_config.h（由 snippet 生成并加入 include 路径）
 
-# 模块源码包含路径
-target_include_directories(${ZEPHYR_CURRENT_TARGET} PUBLIC
+# 模块源码包含路径（INTERFACE 确保传播到下游所有目标）
+target_include_directories(${ZEPHYR_CURRENT_TARGET} INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix
+    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/controller
+    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations
+    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations/runners
+)
+
+# 显式加到 app 目标（双重保险，防止 ZEPHYR_CURRENT_TARGET 指向内部目标）
+target_include_directories(app PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix
     ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/controller
     ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations

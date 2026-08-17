@@ -14,21 +14,21 @@ menu "RGB Matrix Configuration"
 
 config RGB_MATRIX_ROWS
     int "Matrix rows"
-    default 5
     help
       Number of rows in the keyboard matrix.
+      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_ROWS=5.
 
 config RGB_MATRIX_COLS
     int "Matrix columns"
-    default 15
     help
       Number of columns in the keyboard matrix.
+      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_COLS=15.
 
 config RGB_MATRIX_LED_COUNT
     int "LED count"
-    default 69
     help
       Total number of RGB LED pixels on the keyboard.
+      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_LED_COUNT=69.
 
 config RGB_MATRIX_CENTER_X
     int "LED center X coordinate (0-255)"
@@ -134,109 +134,109 @@ comment "Normal effects"
 
 config RGB_MATRIX_EFFECT_ALPHAS_MODS
     bool "Alphas Mods"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_GRADIENT_UP_DOWN
     bool "Gradient Up Down"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_GRADIENT_LEFT_RIGHT
     bool "Gradient Left Right"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BREATHING
     bool "Breathing"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_SAT
     bool "Band Sat"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_VAL
     bool "Band Val"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_PINWHEEL_SAT
     bool "Band Pinwheel Sat"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_PINWHEEL_VAL
     bool "Band Pinwheel Val"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_SPIRAL_SAT
     bool "Band Spiral Sat"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_BAND_SPIRAL_VAL
     bool "Band Spiral Val"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_ALL
     bool "Cycle All"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT
     bool "Cycle Left Right"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_UP_DOWN
     bool "Cycle Up Down"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_RAINBOW_MOVING_CHEVRON
     bool "Rainbow Moving Chevron"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_OUT_IN
     bool "Cycle Out In"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_OUT_IN_DUAL
     bool "Cycle Out In Dual"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_PINWHEEL
     bool "Cycle Pinwheel"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_CYCLE_SPIRAL
     bool "Cycle Spiral"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_DUAL_BEACON
     bool "Dual Beacon"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_RAINBOW_BEACON
     bool "Rainbow Beacon"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_RAINBOW_PINWHEELS
     bool "Rainbow Pinwheels"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_FLOWER_BLOOMING
     bool "Flower Blooming"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_RAINDROPS
     bool "Raindrops"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_JELLYBEAN_RAINDROPS
     bool "Jellybean Raindrops"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_HUE_BREATHING
     bool "Hue Breathing"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_HUE_PENDULUM
     bool "Hue Pendulum"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_HUE_WAVE
     bool "Hue Wave"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_PIXEL_RAIN
     bool "Pixel Rain"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_PIXEL_FLOW
     bool "Pixel Flow"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_PIXEL_FRACTAL
     bool "Pixel Fractal"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_STARLIGHT
     bool "Starlight"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_STARLIGHT_DUAL_SAT
     bool "Starlight Dual Sat"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_STARLIGHT_DUAL_HUE
     bool "Starlight Dual Hue"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_STARLIGHT_SMOOTH
     bool "Starlight Smooth"
-    default y
+    default n
 config RGB_MATRIX_EFFECT_RIVERFLOW
     bool "Riverflow"
-    default y
+    default n
 
 comment "Reactive effects (extra ~80 bytes RAM)"
 

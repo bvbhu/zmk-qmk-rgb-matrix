@@ -26,39 +26,6 @@
 #	define RGB_MATRIX_TIMEOUT 0
 #endif
 
-#ifndef RGB_MATRIX_MAXIMUM_BRIGHTNESS
-#	define RGB_MATRIX_MAXIMUM_BRIGHTNESS UINT8_MAX
-#endif
-
-#ifndef RGB_MATRIX_HUE_STEP
-#	define RGB_MATRIX_HUE_STEP 8
-#endif
-
-#ifndef RGB_MATRIX_SAT_STEP
-#	define RGB_MATRIX_SAT_STEP 16
-#endif
-
-#ifndef RGB_MATRIX_VAL_STEP
-#	define RGB_MATRIX_VAL_STEP 16
-#endif
-
-#ifndef RGB_MATRIX_SPD_STEP
-#	define RGB_MATRIX_SPD_STEP 16
-#endif
-
-#ifndef RGB_MATRIX_DEFAULT_ON
-#	define RGB_MATRIX_DEFAULT_ON true
-#endif
-
-#ifndef RGB_MATRIX_DEFAULT_MODE
-#	ifdef ENABLE_RGB_MATRIX_CYCLE_LEFT_RIGHT
-#		define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_CYCLE_LEFT_RIGHT
-#	else
-// fallback to solid colors if RGB_MATRIX_CYCLE_LEFT_RIGHT is disabled in userspace
-#		define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_SOLID_COLOR
-#	endif
-#endif
-
 #ifndef RGB_MATRIX_DEFAULT_HUE
 #	define RGB_MATRIX_DEFAULT_HUE 0
 #endif
@@ -69,18 +36,6 @@
 
 #ifndef RGB_MATRIX_DEFAULT_VAL
 #	define RGB_MATRIX_DEFAULT_VAL RGB_MATRIX_MAXIMUM_BRIGHTNESS
-#endif
-
-#ifndef RGB_MATRIX_DEFAULT_SPD
-#	define RGB_MATRIX_DEFAULT_SPD UINT8_MAX / 2
-#endif
-
-#ifndef RGB_MATRIX_DEFAULT_FLAGS
-#	define RGB_MATRIX_DEFAULT_FLAGS LED_FLAG_ALL
-#endif
-
-#ifndef RGB_MATRIX_LED_FLUSH_LIMIT
-#	define RGB_MATRIX_LED_FLUSH_LIMIT 16
 #endif
 
 #ifndef RGB_MATRIX_LED_PROCESS_LIMIT
@@ -181,11 +136,13 @@ extern rgb_config_t rgb_matrix_config;
 extern uint32_t g_rgb_timer;
 /* LED 布局声明：const / 非 const 可切换。
  * 键盘仓若将 g_led_config 定义为 const（节省 RAM），
- * 需在键盘仓 Kconfig 或 include 前定义 RGB_LED_CONFIG_CONST。 */
-#ifndef RGB_LED_CONFIG_CONST
-extern led_config_t g_led_config;
-#else
+ * 需在键盘仓 .conf 中设置 CONFIG_RGB_LED_CONFIG_CONST=y。
+ * 使用 CONFIG_RGB_LED_CONFIG_CONST 直接引用 autoconf.h
+ * 而非生成头文件，避免 Kconfig 未处理时取到默认值。 */
+#if CONFIG_RGB_LED_CONFIG_CONST
 extern const led_config_t g_led_config;
+#else
+extern led_config_t g_led_config;
 #endif
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
 extern last_hit_t g_last_hit_tracker;

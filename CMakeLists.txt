@@ -22,39 +22,37 @@ zephyr_sources(
 # ================================================================
 # 生成 rgb_matrix_generated_config.h（从 Kconfig）
 # 直接在模块 CMakeLists 中生成，确保始终产出，不依赖 snippet 激活。
+#
+# 注意：set() / string(APPEND) 每次只传一个字符串参数，
+# 避免 CMake 将多参数视为列表（列表分隔符 ';' 会泄露到输出）。
 # ================================================================
 set(RGB_MATRIX_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${RGB_MATRIX_GEN_DIR})
 
-set(RGB_MATRIX_GEN_H
-    "#pragma once\n"
-    "\n"
-    "/* 由 rgb_matrix 模块 CMakeLists 从 Kconfig 自动生成，请勿手改 */\n"
-    "\n"
-    "/* ===== Matrix dimensions ===== */\n"
-    "#define MATRIX_ROWS ${CONFIG_RGB_MATRIX_ROWS}\n"
-    "#define MATRIX_COLS ${CONFIG_RGB_MATRIX_COLS}\n"
-    "#define RGB_MATRIX_LED_COUNT ${CONFIG_RGB_MATRIX_LED_COUNT}\n"
-    "\n"
-    "/* ===== Rendering parameters ===== */\n"
-    "#define RGB_MATRIX_CENTER { ${CONFIG_RGB_MATRIX_CENTER_X}, ${CONFIG_RGB_MATRIX_CENTER_Y} }\n"
-    "#define RGB_MATRIX_LED_FLUSH_LIMIT ${CONFIG_RGB_MATRIX_LED_FLUSH_LIMIT}\n"
-)
+set(RGB_MATRIX_GEN_H "")
+string(APPEND RGB_MATRIX_GEN_H "#pragma once\n")
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* 由 rgb_matrix 模块 CMakeLists 从 Kconfig 自动生成，请勿手改 */\n")
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* ===== Matrix dimensions ===== */\n")
+string(APPEND RGB_MATRIX_GEN_H "#define MATRIX_ROWS ${CONFIG_RGB_MATRIX_ROWS}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define MATRIX_COLS ${CONFIG_RGB_MATRIX_COLS}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_LED_COUNT ${CONFIG_RGB_MATRIX_LED_COUNT}\n")
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* ===== Rendering parameters ===== */\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_CENTER { ${CONFIG_RGB_MATRIX_CENTER_X}, ${CONFIG_RGB_MATRIX_CENTER_Y} }\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_LED_FLUSH_LIMIT ${CONFIG_RGB_MATRIX_LED_FLUSH_LIMIT}\n")
 
 if(${CONFIG_RGB_WORKQ_STACK_SIZE} GREATER 0)
-    string(APPEND RGB_MATRIX_GEN_H
-        "#define RGB_WORKQ_STACK_SIZE ${CONFIG_RGB_WORKQ_STACK_SIZE}\n"
-    )
+    string(APPEND RGB_MATRIX_GEN_H "#define RGB_WORKQ_STACK_SIZE ${CONFIG_RGB_WORKQ_STACK_SIZE}\n")
 endif()
 
-string(APPEND RGB_MATRIX_GEN_H
-    "\n"
-    "/* ===== Step values ===== */\n"
-    "#define RGB_MATRIX_HUE_STEP ${CONFIG_RGB_MATRIX_HUE_STEP}\n"
-    "#define RGB_MATRIX_SAT_STEP ${CONFIG_RGB_MATRIX_SAT_STEP}\n"
-    "#define RGB_MATRIX_VAL_STEP ${CONFIG_RGB_MATRIX_VAL_STEP}\n"
-    "#define RGB_MATRIX_SPD_STEP ${CONFIG_RGB_MATRIX_SPD_STEP}\n"
-)
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* ===== Step values ===== */\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_HUE_STEP ${CONFIG_RGB_MATRIX_HUE_STEP}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_SAT_STEP ${CONFIG_RGB_MATRIX_SAT_STEP}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_VAL_STEP ${CONFIG_RGB_MATRIX_VAL_STEP}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_SPD_STEP ${CONFIG_RGB_MATRIX_SPD_STEP}\n")
 
 # DEFAULT_ON: Kconfig bool → C true/false
 if(${CONFIG_RGB_MATRIX_DEFAULT_ON})
@@ -63,36 +61,26 @@ else()
     set(RGB_MATRIX_DEFAULT_ON_VAL "false")
 endif()
 
-string(APPEND RGB_MATRIX_GEN_H
-    "\n"
-    "/* ===== Limits and defaults ===== */\n"
-    "#define RGB_MATRIX_MAXIMUM_BRIGHTNESS ${CONFIG_RGB_MATRIX_MAXIMUM_BRIGHTNESS}\n"
-    "#define RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE ${CONFIG_RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE}\n"
-    "#define RGB_MATRIX_DEFAULT_FLAGS LED_FLAG_ALL\n"
-    "#define RGB_MATRIX_DEFAULT_HSV ${CONFIG_RGB_MATRIX_DEFAULT_HSV}\n"
-    "#define RGB_MATRIX_DEFAULT_SPD ${CONFIG_RGB_MATRIX_DEFAULT_SPD}\n"
-    "#define RGB_MATRIX_DEFAULT_ON ${RGB_MATRIX_DEFAULT_ON_VAL}\n"
-    "#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_${CONFIG_RGB_MATRIX_DEFAULT_MODE}\n"
-)
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* ===== Limits and defaults ===== */\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_MAXIMUM_BRIGHTNESS ${CONFIG_RGB_MATRIX_MAXIMUM_BRIGHTNESS}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE ${CONFIG_RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_FLAGS LED_FLAG_ALL\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_HSV ${CONFIG_RGB_MATRIX_DEFAULT_HSV}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_SPD ${CONFIG_RGB_MATRIX_DEFAULT_SPD}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_ON ${RGB_MATRIX_DEFAULT_ON_VAL}\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_${CONFIG_RGB_MATRIX_DEFAULT_MODE}\n")
 
 if(${CONFIG_RGB_MATRIX_KEEP_ON_WIRED})
-    string(APPEND RGB_MATRIX_GEN_H
-        "\n"
-        "#define RGB_MATRIX_KEEP_ON_WIRED\n"
-    )
+    string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_KEEP_ON_WIRED\n")
 endif()
 
 if(${CONFIG_RGB_LED_CONFIG_CONST})
-    string(APPEND RGB_MATRIX_GEN_H
-        "\n"
-        "#define RGB_LED_CONFIG_CONST\n"
-    )
+    string(APPEND RGB_MATRIX_GEN_H "#define RGB_LED_CONFIG_CONST\n")
 endif()
 
-string(APPEND RGB_MATRIX_GEN_H
-    "\n"
-    "/* ===== Enabled effects ===== */\n"
-)
+string(APPEND RGB_MATRIX_GEN_H "\n")
+string(APPEND RGB_MATRIX_GEN_H "/* ===== Enabled effects ===== */\n")
 
 set(RGB_MATRIX_EFFECTS
     ALPHAS_MODS GRADIENT_UP_DOWN GRADIENT_LEFT_RIGHT BREATHING
@@ -111,9 +99,7 @@ set(RGB_MATRIX_EFFECTS
 foreach(EFFECT ${RGB_MATRIX_EFFECTS})
     set(EFFECT_ON "CONFIG_RGB_MATRIX_EFFECT_${EFFECT}")
     if(${EFFECT_ON})
-        string(APPEND RGB_MATRIX_GEN_H
-            "#define ENABLE_RGB_MATRIX_${EFFECT}\n"
-        )
+        string(APPEND RGB_MATRIX_GEN_H "#define ENABLE_RGB_MATRIX_${EFFECT}\n")
     endif()
 endforeach()
 

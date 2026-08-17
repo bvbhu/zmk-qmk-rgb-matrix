@@ -1,11 +1,17 @@
+# ZMK QMK-style RGB Matrix Module
+#
+# This manifest declares the RGB Matrix module as a west project.
+# To include this module in a keyboard project, add it to your keyboard's
+# config/west.yml as a project.
+
 manifest:
   remotes:
-    - name: remote-name
-      url-base: https://github.com/remote-name
+    - name: mykeyboard
+      url-base: https://github.com/bvbhu
   projects:
-    # Together with the above defined remote, this refers to a module located at
-    # https://github.com/remote-name/repository-name
-    - name: repository-name
-      remote: remote-name
-      # This points to a west manifest file in the remote module for further imports
-      import: west.yml
+    - name: zmk-qmk-rgb-matrix
+      remote: mykeyboard
+      revision: main
+      path: modules/rgb-matrix
+  self:
+    path: .

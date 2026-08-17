@@ -1,6 +1,28 @@
-MIT License
+# License
 
-Copyright (c) 2024 The ZMK Contributors
+This module contains files under two licenses:
+- **MIT License** (see below) — for original integration and utility code
+- **GNU General Public License v2 or later (GPL-2.0-or-later)** — for QMK-derived RGB Matrix core and effect animations
+
+## MIT License
+
+The following files are licensed under the MIT License:
+
+| File | Copyright |
+|------|-----------|
+| `src/rgb_matrix/keymap.c` | bvbhu, 2026 |
+| `src/rgb_matrix/controller/rgb_matrix_settings.c` | bvbhu, 2026 |
+| `src/rgb_matrix/controller/rgb_matrix_settings.h` | bvbhu, 2026 |
+| `src/rgb_matrix/controller/qmk_compat.c` | bvbhu, 2026 |
+| `src/rgb_matrix/controller/qmk_compat.h` | bvbhu, 2026 |
+| `src/rgb_matrix/controller/lib8tion.c` | FastLED, 2013 |
+| `src/rgb_matrix/controller/lib8tion.h` | FastLED, 2013 |
+
+```
+The MIT License (MIT)
+
+Copyright (c) 2026 bvbhu
+Copyright (c) 2013 FastLED
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +41,49 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+## GNU General Public License v2 or later
+
+The following files are licensed under GPL-2.0-or-later:
+
+| File | Copyright |
+|------|-----------|
+| `src/rgb_matrix/controller/rgb_matrix.c` | Jason Williams, Jack Humbert, Yiancar (QMK) |
+| `src/rgb_matrix/controller/rgb_matrix.h` | Jason Williams, Jack Humbert, Yiancar (QMK) |
+| `src/rgb_matrix/controller/rgb_matrix_types.h` | QMK Contributors, 2021 |
+| `src/rgb_matrix/controller/post_config.h` | QMK Contributors, 2023 |
+| `src/rgb_matrix/rgb_matrix.h` | bvbhu, 2026 (thin wrapper around QMK API) |
+| `src/rgb_matrix/config.h` | Template (reference only) |
+| `src/rgb_matrix/animations/flower_blooming_anim.h` | HorrorTroll, 2023 |
+| `src/rgb_matrix/animations/pixel_flow_anim.h` | @filterpaper, 2022 |
+| `src/rgb_matrix/animations/pixel_fractal_anim.h` | @filterpaper, 2022 |
+| `src/rgb_matrix/animations/pixel_rain_anim.h` | @filterpaper, 2022 |
+| `src/rgb_matrix/animations/starlight_smooth_anim.h` | @art-was-here, 2022 |
+| All other `src/rgb_matrix/animations/*.h` | QMK Contributors |
+
+```
+                    GNU GENERAL PUBLIC LICENSE
+                       Version 2, June 1991
+
+ Copyright (C) 1989, 1991 Free Software Foundation, Inc.,
+ 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+ Everyone is permitted to copy and distribute verbatim copies
+ of this license document, but changing it is not allowed.
+...
+                    END OF TERMS AND CONDITIONS
+```
+
+(Full GPL-2.0 text at https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+
+---
+
+## Summary
+
+| License | Files | Rationale |
+|---------|-------|-----------|
+| MIT | Integration headers, settings, QMK-compat layer, lib8tion | Original code or permissive FastLED code |
+| GPL-2.0-or-later | RGB Matrix core, types, wrapper API, animations | Derived from QMK |
+
+Since GPL-2.0-or-later files are linked into the same binary, the resulting firmware **must** be distributed under GPL-2.0-or-later-compatible terms.

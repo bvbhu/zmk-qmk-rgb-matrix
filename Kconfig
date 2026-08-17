@@ -1,0 +1,276 @@
+# RGB Matrix — Zephyr Kconfig
+# 所有 RGB Matrix 参数通过 Kconfig 定义，由 snippet 自动生成
+# rgb_matrix_generated_config.h 注入编译。
+
+menuconfig ZMK_RGB_MATRIX
+    bool "Enable QMK-style RGB Matrix (ZMK module)"
+    default y
+    help
+      Enable QMK-style RGB Matrix effect engine as a ZMK module.
+
+if ZMK_RGB_MATRIX
+
+menu "RGB Matrix Configuration"
+
+config RGB_MATRIX_ROWS
+    int "Matrix rows"
+    default 5
+    help
+      Number of rows in the keyboard matrix.
+
+config RGB_MATRIX_COLS
+    int "Matrix columns"
+    default 15
+    help
+      Number of columns in the keyboard matrix.
+
+config RGB_MATRIX_LED_COUNT
+    int "LED count"
+    default 69
+    help
+      Total number of RGB LED pixels on the keyboard.
+
+config RGB_MATRIX_CENTER_X
+    int "LED center X coordinate (0-255)"
+    default 108
+    help
+      X center point of the LED coordinate system for symmetric effects.
+
+config RGB_MATRIX_CENTER_Y
+    int "LED center Y coordinate (0-255)"
+    default 32
+    help
+      Y center point of the LED coordinate system for symmetric effects.
+
+config RGB_MATRIX_LED_FLUSH_LIMIT
+    int "LED flush interval (ms)"
+    default 16
+    range 1 100
+    help
+      Interval in milliseconds between LED buffer flushes.
+
+config RGB_WORKQ_STACK_SIZE
+    int "RGB workqueue stack size (bytes)"
+    default 2048
+    range 0 4096
+    help
+      If > 0, use a dedicated workqueue for RGB rendering.
+      If 0, use the system workqueue (saves RAM).
+
+config RGB_MATRIX_HUE_STEP
+    int "Hue step"
+    default 8
+    range 1 255
+
+config RGB_MATRIX_SAT_STEP
+    int "Saturation step"
+    default 16
+    range 1 255
+
+config RGB_MATRIX_VAL_STEP
+    int "Value (brightness) step"
+    default 16
+    range 1 255
+
+config RGB_MATRIX_SPD_STEP
+    int "Speed step"
+    default 16
+    range 1 255
+
+config RGB_MATRIX_MAXIMUM_BRIGHTNESS
+    int "Maximum brightness"
+    default 225
+    range 1 255
+
+config RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE
+    int "Settings save debounce delay (ms)"
+    default 5000
+    help
+      Debounce for saving RGB settings to Flash.
+      Positive: trailing-edge debounce; 0: write immediately; negative: disable.
+
+config RGB_MATRIX_DEFAULT_HSV
+    string "Default HSV (hue, sat, val)"
+    default "170, 255, 200"
+    help
+      Default HSV color when no valid settings are loaded.
+
+config RGB_MATRIX_DEFAULT_SPD
+    int "Default animation speed (0-255)"
+    default 127
+    range 0 255
+
+config RGB_MATRIX_DEFAULT_ON
+    bool "Default RGB on at startup"
+    default y
+
+config RGB_MATRIX_DEFAULT_MODE
+    string "Default effect mode"
+    default "CYCLE_LEFT_RIGHT"
+    help
+      Effect name without RGB_MATRIX_ prefix, e.g. CYCLE_LEFT_RIGHT.
+
+config RGB_MATRIX_KEEP_ON_WIRED
+    bool "Keep RGB on when wired (USB powered)"
+    default n
+    help
+      If enabled, RGB stays on in wired mode regardless of idle timeout.
+      Wireless mode still obeys CONFIG_ZMK_IDLE_TIMEOUT.
+
+config RGB_LED_CONFIG_CONST
+    bool "Declare g_led_config as const"
+    default n
+    help
+      If enabled, g_led_config is declared const in rgb_matrix.h.
+      The keyboard's keymap.c must also define g_led_config as const.
+      Useful on RAM-constrained MCUs (e.g. STM32F072) to place the
+      LED layout in flash rather than RAM.
+
+endmenu
+
+menu "RGB Matrix Effects"
+
+comment "Normal effects"
+
+config RGB_MATRIX_EFFECT_ALPHAS_MODS
+    bool "Alphas Mods"
+    default y
+config RGB_MATRIX_EFFECT_GRADIENT_UP_DOWN
+    bool "Gradient Up Down"
+    default y
+config RGB_MATRIX_EFFECT_GRADIENT_LEFT_RIGHT
+    bool "Gradient Left Right"
+    default y
+config RGB_MATRIX_EFFECT_BREATHING
+    bool "Breathing"
+    default y
+config RGB_MATRIX_EFFECT_BAND_SAT
+    bool "Band Sat"
+    default y
+config RGB_MATRIX_EFFECT_BAND_VAL
+    bool "Band Val"
+    default y
+config RGB_MATRIX_EFFECT_BAND_PINWHEEL_SAT
+    bool "Band Pinwheel Sat"
+    default y
+config RGB_MATRIX_EFFECT_BAND_PINWHEEL_VAL
+    bool "Band Pinwheel Val"
+    default y
+config RGB_MATRIX_EFFECT_BAND_SPIRAL_SAT
+    bool "Band Spiral Sat"
+    default y
+config RGB_MATRIX_EFFECT_BAND_SPIRAL_VAL
+    bool "Band Spiral Val"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_ALL
+    bool "Cycle All"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT
+    bool "Cycle Left Right"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_UP_DOWN
+    bool "Cycle Up Down"
+    default y
+config RGB_MATRIX_EFFECT_RAINBOW_MOVING_CHEVRON
+    bool "Rainbow Moving Chevron"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_OUT_IN
+    bool "Cycle Out In"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_OUT_IN_DUAL
+    bool "Cycle Out In Dual"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_PINWHEEL
+    bool "Cycle Pinwheel"
+    default y
+config RGB_MATRIX_EFFECT_CYCLE_SPIRAL
+    bool "Cycle Spiral"
+    default y
+config RGB_MATRIX_EFFECT_DUAL_BEACON
+    bool "Dual Beacon"
+    default y
+config RGB_MATRIX_EFFECT_RAINBOW_BEACON
+    bool "Rainbow Beacon"
+    default y
+config RGB_MATRIX_EFFECT_RAINBOW_PINWHEELS
+    bool "Rainbow Pinwheels"
+    default y
+config RGB_MATRIX_EFFECT_FLOWER_BLOOMING
+    bool "Flower Blooming"
+    default y
+config RGB_MATRIX_EFFECT_RAINDROPS
+    bool "Raindrops"
+    default y
+config RGB_MATRIX_EFFECT_JELLYBEAN_RAINDROPS
+    bool "Jellybean Raindrops"
+    default y
+config RGB_MATRIX_EFFECT_HUE_BREATHING
+    bool "Hue Breathing"
+    default y
+config RGB_MATRIX_EFFECT_HUE_PENDULUM
+    bool "Hue Pendulum"
+    default y
+config RGB_MATRIX_EFFECT_HUE_WAVE
+    bool "Hue Wave"
+    default y
+config RGB_MATRIX_EFFECT_PIXEL_RAIN
+    bool "Pixel Rain"
+    default y
+config RGB_MATRIX_EFFECT_PIXEL_FLOW
+    bool "Pixel Flow"
+    default y
+config RGB_MATRIX_EFFECT_PIXEL_FRACTAL
+    bool "Pixel Fractal"
+    default y
+config RGB_MATRIX_EFFECT_STARLIGHT
+    bool "Starlight"
+    default y
+config RGB_MATRIX_EFFECT_STARLIGHT_DUAL_SAT
+    bool "Starlight Dual Sat"
+    default y
+config RGB_MATRIX_EFFECT_STARLIGHT_DUAL_HUE
+    bool "Starlight Dual Hue"
+    default y
+config RGB_MATRIX_EFFECT_STARLIGHT_SMOOTH
+    bool "Starlight Smooth"
+    default y
+config RGB_MATRIX_EFFECT_RIVERFLOW
+    bool "Riverflow"
+    default y
+
+comment "Reactive effects (extra ~80 bytes RAM)"
+
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_SIMPLE
+    bool "Solid Reactive Simple"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE
+    bool "Solid Reactive"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_WIDE
+    bool "Solid Reactive Wide"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTIWIDE
+    bool "Solid Reactive Multiwide"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_CROSS
+    bool "Solid Reactive Cross"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTICROSS
+    bool "Solid Reactive Multicross"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_NEXUS
+    bool "Solid Reactive Nexus"
+config RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTINEXUS
+    bool "Solid Reactive Mult nexus"
+config RGB_MATRIX_EFFECT_SPLASH
+    bool "Splash"
+config RGB_MATRIX_EFFECT_MULTISPLASH
+    bool "Multisplash"
+config RGB_MATRIX_EFFECT_SOLID_SPLASH
+    bool "Solid Splash"
+config RGB_MATRIX_EFFECT_SOLID_MULTISPLASH
+    bool "Solid Multisplash"
+
+comment "Framebuffer effects (extra ~96 bytes RAM)"
+
+config RGB_MATRIX_EFFECT_TYPING_HEATMAP
+    bool "Typing Heatmap"
+config RGB_MATRIX_EFFECT_DIGITAL_RAIN
+    bool "Digital Rain"
+
+endmenu
+endif

@@ -18,6 +18,7 @@
  */
 
 #include "rgb_matrix.h"
+#include "rgb_matrix_mode_select.h"
 #include "lib8tion.h"
 
 #include <dt-bindings/zmk/rgb.h>
@@ -152,7 +153,7 @@ static bool rgb_matrix_position_to_rc(uint32_t position, uint8_t* row, uint8_t* 
 void eeconfig_update_rgb_matrix_default(void)
 {
 	rgb_matrix_config.enable = RGB_MATRIX_DEFAULT_ON;
-	rgb_matrix_config.mode = RGB_MATRIX_DEFAULT_MODE;
+	rgb_matrix_config.mode = rgb_matrix_default_mode_from_name();
 	rgb_matrix_config.hsv = (hsv_t){ RGB_MATRIX_DEFAULT_HUE, RGB_MATRIX_DEFAULT_SAT, RGB_MATRIX_DEFAULT_VAL };
 	rgb_matrix_config.speed = RGB_MATRIX_DEFAULT_SPD;
 	rgb_matrix_config.flags = RGB_MATRIX_DEFAULT_FLAGS;

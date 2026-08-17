@@ -85,17 +85,6 @@ string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_ON CONFIG_RGB_MATRIX_
 string(APPEND RGB_MATRIX_GEN_H "#else\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_ON 0\n")
 string(APPEND RGB_MATRIX_GEN_H "#endif\n")
-string(APPEND RGB_MATRIX_GEN_H "\n")
-string(APPEND RGB_MATRIX_GEN_H "/* DEFAULT_MODE：从 autoconf.h 读取，用两级宏拼接 RGB_MATRIX_ 前缀 */\n")
-string(APPEND RGB_MATRIX_GEN_H "#ifdef CONFIG_RGB_MATRIX_DEFAULT_MODE\n")
-string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_MODE_CONCAT_(a, b) a##b\n")
-string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_MODE_CONCAT(a, b) RGB_MATRIX_DEFAULT_MODE_CONCAT_(a, b)\n")
-string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_DEFAULT_MODE_CONCAT(RGB_MATRIX_, CONFIG_RGB_MATRIX_DEFAULT_MODE)\n")
-string(APPEND RGB_MATRIX_GEN_H "#undef RGB_MATRIX_DEFAULT_MODE_CONCAT\n")
-string(APPEND RGB_MATRIX_GEN_H "#undef RGB_MATRIX_DEFAULT_MODE_CONCAT_\n")
-string(APPEND RGB_MATRIX_GEN_H "#else\n")
-string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_CYCLE_LEFT_RIGHT\n")
-string(APPEND RGB_MATRIX_GEN_H "#endif\n")
 
 string(APPEND RGB_MATRIX_GEN_H "#ifdef CONFIG_RGB_MATRIX_KEEP_ON_WIRED\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_KEEP_ON_WIRED\n")
@@ -103,6 +92,10 @@ string(APPEND RGB_MATRIX_GEN_H "#endif\n")
 
 string(APPEND RGB_MATRIX_GEN_H "#ifdef CONFIG_RGB_LED_CONFIG_CONST\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_LED_CONFIG_CONST\n")
+string(APPEND RGB_MATRIX_GEN_H "#endif\n")
+
+string(APPEND RGB_MATRIX_GEN_H "#ifdef CONFIG_RGB_MATRIX_IS_LEFT\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_IS_LEFT true\n")
 string(APPEND RGB_MATRIX_GEN_H "#endif\n")
 
 string(APPEND RGB_MATRIX_GEN_H "\n")
@@ -130,6 +123,30 @@ endforeach()
 
 file(WRITE "${RGB_MATRIX_GEN_DIR}/rgb_matrix_generated_config.h"
     "${RGB_MATRIX_GEN_H}")
+
+# ================================================================
+# 生成 rgb_matrix_mode_select.h
+# autoconf.h 中字符串 Kconfig 值带引号（"CYCLE_LEFT_RIGHT"），无法用 ##
+# 拼成枚举标识符，改为运行时 strcmp 匹配已启用灯效。
+# 该头文件由 rgb_matrix.c 在 rgb_matrix.h（enum 定义）之后 include。
+# ================================================================
+set(RGB_MATRIX_MODE_SELECT_H "")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "#pragma once\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "static inline uint8_t rgb_matrix_default_mode_from_name(void)\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "{\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "#ifdef CONFIG_RGB_MATRIX_DEFAULT_MODE\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "    if (strcmp(CONFIG_RGB_MATRIX_DEFAULT_MODE, \"SOLID_COLOR\") == 0) return (uint8_t)RGB_MATRIX_SOLID_COLOR;\n")
+foreach(EFFECT ${RGB_MATRIX_EFFECTS})
+    string(APPEND RGB_MATRIX_MODE_SELECT_H "#ifdef CONFIG_RGB_MATRIX_EFFECT_${EFFECT}\n")
+    string(APPEND RGB_MATRIX_MODE_SELECT_H "    if (strcmp(CONFIG_RGB_MATRIX_DEFAULT_MODE, \"${EFFECT}\") == 0) return (uint8_t)RGB_MATRIX_${EFFECT};\n")
+    string(APPEND RGB_MATRIX_MODE_SELECT_H "#endif\n")
+endforeach()
+string(APPEND RGB_MATRIX_MODE_SELECT_H "#endif\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "    return (uint8_t)RGB_MATRIX_NONE;\n")
+string(APPEND RGB_MATRIX_MODE_SELECT_H "}\n")
+file(WRITE "${RGB_MATRIX_GEN_DIR}/rgb_matrix_mode_select.h"
+    "${RGB_MATRIX_MODE_SELECT_H}")
 
 zephyr_include_directories(${RGB_MATRIX_GEN_DIR})
 

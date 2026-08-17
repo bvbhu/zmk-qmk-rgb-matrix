@@ -143,6 +143,15 @@ config RGB_LED_CONFIG_CONST
       Useful on RAM-constrained MCUs (e.g. STM32F072) to place the
       LED layout in flash rather than RAM.
 
+config RGB_MATRIX_IS_LEFT
+    bool "Force is_keyboard_left() to return true"
+    default n
+    help
+      When enabled, is_keyboard_left() always returns true.
+      When disabled (default), the RGB MATRIX_IS_LEFT macro stays
+      undefined and is_keyboard_left() follows ZMK split role
+      (central = left half).
+
 endmenu
 
 menu "RGB Matrix Effects"

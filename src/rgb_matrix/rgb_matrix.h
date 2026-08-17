@@ -26,13 +26,8 @@ extern "C" {
 #include "rgb_matrix_types.h"
 #include "rgb_matrix_settings.h"
 
-#ifndef RGB_MATRIX_TIMEOUT
-#	define RGB_MATRIX_TIMEOUT 0
-#endif
+#define RGB_MATRIX_LED_PROCESS_LIMIT RGB_MATRIX_LED_COUNT
 
-#ifndef RGB_MATRIX_LED_PROCESS_LIMIT
-#	define RGB_MATRIX_LED_PROCESS_LIMIT RGB_MATRIX_LED_COUNT
-#endif
 
 struct rgb_matrix_limits_t
 {

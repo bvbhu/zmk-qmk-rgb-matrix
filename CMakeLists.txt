@@ -12,6 +12,9 @@ zephyr_include_directories(src/rgb_matrix/controller)
 zephyr_include_directories(src/rgb_matrix/animations)
 zephyr_include_directories(src/rgb_matrix/animations/runners)
 
+# 确保 <zmk/...> 头文件可被 qmk_compat.h 等引用
+zephyr_include_directories(${CMAKE_SOURCE_DIR}/include)
+
 zephyr_sources(
     src/rgb_matrix/controller/rgb_matrix.c
     src/rgb_matrix/controller/rgb_matrix_settings.c

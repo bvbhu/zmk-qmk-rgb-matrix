@@ -31,7 +31,6 @@
 #include <zephyr/kernel.h>
 
 /* ===== ZMK headers ===== */
-#include <zmk/keymap.h>
 #include "qmk_compat.h"
 #include "post_config.h"
 

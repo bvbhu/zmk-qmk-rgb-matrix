@@ -6,7 +6,7 @@ QMK 风格的 RGB Matrix 灯效系统，移植自 QMK，适配 ZMK。支持全�
 
 ```
 zmk-qmk-rgb-matrix/
-├── CMakeLists.txt               # 编译 controller/ 下的模块源码
+├── CMakeLists.txt               # 编译模块源码
 ├── Kconfig                      # 所有 RGB Matrix 参数的 Kconfig 定义
 ├── zephyr/module.yml            # 模块元数据
 ├── west.yml                     # west manifest
@@ -14,13 +14,13 @@ zmk-qmk-rgb-matrix/
 │
 └── src/rgb_matrix/
     ├── rgb_matrix.h             # 公共 API（键盘仓 keymap.c 的唯一 include 入口）
-    ├── controller/              # 编译型源码
-    │   ├── rgb_matrix.c/.h      # 控制器核心
-    │   ├── rgb_matrix_settings.c/.h  # &rgb_ug 监听 + 持久化
-    │   ├── rgb_matrix_types.h   # 类型定义（led_config_t 等）
-    │   ├── qmk_compat.c/.h      # QMK API 兼容层
-    │   ├── post_config.h        # Key Reactive / Framebuffer 宏
-    │   └── lib8tion.c/.h        # FastLED 数学运算
+    ├── rgb_matrix.h             # 公共 API + 控制器核心声明
+    ├── rgb_matrix.c             # 控制器核心
+    ├── rgb_matrix_settings.c/.h # &rgb_ug 监听 + 持久化
+    ├── rgb_matrix_types.h       # 类型定义（led_config_t 等）
+    ├── qmk_compat.c/.h          # QMK API 兼容层
+    ├── post_config.h            # Key Reactive / Framebuffer 宏
+    └── lib8tion.c/.h            # FastLED 数学运算
     └── animations/              # 编译型源码
         ├── rgb_matrix_effects.inc
         ├── *_anim.h
@@ -34,8 +34,8 @@ snippets/
 
 **说明：**
 
-- `rgb_matrix.h` — 公共 API。键盘仓 `keymap.c` 通过 `#include <rgb_matrix.h>` 获取所有类型和函数声明。其内容仅转发 `controller/rgb_matrix.h`。
-- `controller/` 和 `animations/` 下的文件是模块的**实际编译代码**，由 `CMakeLists.txt` 收集。
+- `rgb_matrix.h` — 公共 API + 控制器核心声明。键盘仓 `keymap.c` 通过 `#include <rgb_matrix.h>` 获取所有类型和函数声明。
+- `src/rgb_matrix/` 和 `animations/` 下的文件是模块的**实际编译代码**，由 `CMakeLists.txt` 收集。
 - `snippets/rgb_matrix/CMakeLists.txt` 在编译时自动生成 `rgb_matrix_generated_config.h` 并注入键盘仓的 `keymap.c`。
 
 ---
@@ -79,7 +79,9 @@ CONFIG_RGB_MATRIX_SPD_STEP=16
 # 限制与默认值
 CONFIG_RGB_MATRIX_MAXIMUM_BRIGHTNESS=225
 CONFIG_RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE=5000
-CONFIG_RGB_MATRIX_DEFAULT_HSV="170, 255, 200"
+CONFIG_RGB_MATRIX_DEFAULT_HUE=170
+CONFIG_RGB_MATRIX_DEFAULT_SAT=255
+CONFIG_RGB_MATRIX_DEFAULT_VAL=200
 CONFIG_RGB_MATRIX_DEFAULT_SPD=127
 CONFIG_RGB_MATRIX_DEFAULT_ON=y
 CONFIG_RGB_MATRIX_DEFAULT_MODE="CYCLE_LEFT_RIGHT"

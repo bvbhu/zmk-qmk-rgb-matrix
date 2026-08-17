@@ -9,7 +9,6 @@
 #include "lib8tion.h"
 #include "rgb_matrix.h"
 
-
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
@@ -33,23 +32,12 @@ static struct k_work_delayable rgb_matrix_save_work;
 static void rgb_matrix_save_handler(struct k_work* work)
 {
 	(void)work;
-
 	uint64_t raw = rgb_matrix_config.raw;
-
-	int err = settings_save_one(
-		RGB_MATRIX_SETTINGS_KEY,
-		&raw,
-		sizeof(raw)
-	);
-
-	if(err)
-	{
-		LOG_ERR("RGB matrix settings save failed (%d)", err);
-	}
+	settings_save_one(RGB_MATRIX_SETTINGS_KEY, &raw, sizeof(raw));
 }
 
-/* 防抖保存：RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE 定义于 config.h，
- *  与 ZMK 全局 CONFIG_ZMK_SETTINGS_SAVE_DEBOUNCE 无关。
+/* 防抖保存：RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE 默认跟随 ZMK 全局
+ * CONFIG_ZMK_SETTINGS_SAVE_DEBOUNCE，也可在键盘仓 .conf 覆盖。
  *  - 负值：禁用持久化，不启动调度，不写 Flash
  *  - 0：立即写入
  *  - 正值：尾缘防抖，停止按键后经过此时间才写一次 Flash */
@@ -95,8 +83,7 @@ static int rgb_matrix_settings_export(int (*cb)(const char* name,
 static int rgb_matrix_settings_commit(void)
 {
 	/* settings_load() 完成后调用，若未加载到有效配置则写入默认值 */
-	if(!settings_loaded || !rgb_matrix_config.mode ||
-	   rgb_matrix_config.mode >= RGB_MATRIX_EFFECT_MAX)
+	if(!settings_loaded || !rgb_matrix_config.mode || rgb_matrix_config.mode >= RGB_MATRIX_EFFECT_MAX)
 	{
 		eeconfig_update_rgb_matrix_default();
 	}
@@ -193,6 +180,8 @@ static int rgb_ug_listener(const zmk_event_t* eh)
 						rgb_matrix_config.hsv.v = qadd8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP);
 					else
 						rgb_matrix_config.hsv.v = qsub8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP);
+					if(rgb_matrix_config.hsv.v > RGB_MATRIX_MAXIMUM_BRIGHTNESS)
+						rgb_matrix_config.hsv.v = RGB_MATRIX_MAXIMUM_BRIGHTNESS;
 				}
 				break;
 			case RGB_BRD_CMD:
@@ -202,6 +191,8 @@ static int rgb_ug_listener(const zmk_event_t* eh)
 						rgb_matrix_config.hsv.v = qsub8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP);
 					else
 						rgb_matrix_config.hsv.v = qadd8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP);
+					if(rgb_matrix_config.hsv.v > RGB_MATRIX_MAXIMUM_BRIGHTNESS)
+						rgb_matrix_config.hsv.v = RGB_MATRIX_MAXIMUM_BRIGHTNESS;
 				}
 				break;
 			case RGB_SPI_CMD:

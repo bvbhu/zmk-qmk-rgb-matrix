@@ -1,6 +1,6 @@
 # RGB Matrix 模块 CMakeLists.txt
 #
-# 将 src/rgb_matrix/controller/ 下的 .c 源文件加入编译。
+# 将 src/rgb_matrix/ 下的 .c 源文件加入编译。
 # 模板文件 keymap.c（LED 布局示例）不包含在内，由各键盘仓通过
 # snippet 注入各自的 keymap.c。
 #
@@ -8,7 +8,6 @@
 # 这些宏将配置传播到 app 目标，不依赖 ZEPHYR_CURRENT_TARGET 是否为 INTERFACE。
 
 zephyr_include_directories(src/rgb_matrix)
-zephyr_include_directories(src/rgb_matrix/controller)
 zephyr_include_directories(src/rgb_matrix/animations)
 zephyr_include_directories(src/rgb_matrix/animations/runners)
 
@@ -30,10 +29,10 @@ endif()
 zephyr_include_directories(${ZMK_CONFIG})
 
 zephyr_sources(
-    src/rgb_matrix/controller/rgb_matrix.c
-    src/rgb_matrix/controller/rgb_matrix_settings.c
-    src/rgb_matrix/controller/qmk_compat.c
-    src/rgb_matrix/controller/lib8tion.c
+    src/rgb_matrix/rgb_matrix.c
+    src/rgb_matrix/rgb_matrix_settings.c
+    src/rgb_matrix/qmk_compat.c
+    src/rgb_matrix/lib8tion.c
 )
 
 # ================================================================
@@ -77,7 +76,9 @@ string(APPEND RGB_MATRIX_GEN_H "/* ===== Limits and defaults ===== */\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_MAXIMUM_BRIGHTNESS CONFIG_RGB_MATRIX_MAXIMUM_BRIGHTNESS\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE CONFIG_RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_FLAGS LED_FLAG_ALL\n")
-string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_HSV CONFIG_RGB_MATRIX_DEFAULT_HSV\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_HUE CONFIG_RGB_MATRIX_DEFAULT_HUE\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_SAT CONFIG_RGB_MATRIX_DEFAULT_SAT\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_VAL CONFIG_RGB_MATRIX_DEFAULT_VAL\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_SPD CONFIG_RGB_MATRIX_DEFAULT_SPD\n")
 string(APPEND RGB_MATRIX_GEN_H "#ifdef CONFIG_RGB_MATRIX_DEFAULT_ON\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_DEFAULT_ON CONFIG_RGB_MATRIX_DEFAULT_ON\n")

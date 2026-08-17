@@ -153,7 +153,7 @@ void eeconfig_update_rgb_matrix_default(void)
 {
 	rgb_matrix_config.enable = RGB_MATRIX_DEFAULT_ON;
 	rgb_matrix_config.mode = RGB_MATRIX_DEFAULT_MODE;
-	rgb_matrix_config.hsv = (hsv_t){ RGB_MATRIX_DEFAULT_HSV };
+	rgb_matrix_config.hsv = (hsv_t){ RGB_MATRIX_DEFAULT_HUE, RGB_MATRIX_DEFAULT_SAT, RGB_MATRIX_DEFAULT_VAL };
 	rgb_matrix_config.speed = RGB_MATRIX_DEFAULT_SPD;
 	rgb_matrix_config.flags = RGB_MATRIX_DEFAULT_FLAGS;
 }

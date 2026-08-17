@@ -84,16 +84,33 @@ config RGB_MATRIX_MAXIMUM_BRIGHTNESS
 
 config RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE
     int "Settings save debounce delay (ms)"
-    default 5000
+    default ZMK_SETTINGS_SAVE_DEBOUNCE
     help
       Debounce for saving RGB settings to Flash.
+      Default follows the ZMK global CONFIG_ZMK_SETTINGS_SAVE_DEBOUNCE,
+      so RGB settings save the same way as other ZMK settings.
       Positive: trailing-edge debounce; 0: write immediately; negative: disable.
 
-config RGB_MATRIX_DEFAULT_HSV
-    string "Default HSV (hue, sat, val)"
-    default "170, 255, 200"
+config RGB_MATRIX_DEFAULT_HUE
+    int "Default hue (0-255)"
+    default 170
+    range 0 255
     help
-      Default HSV color when no valid settings are loaded.
+      Default hue when no valid settings are loaded.
+
+config RGB_MATRIX_DEFAULT_SAT
+    int "Default saturation (0-255)"
+    default 255
+    range 0 255
+    help
+      Default saturation when no valid settings are loaded.
+
+config RGB_MATRIX_DEFAULT_VAL
+    int "Default value/brightness (0-255)"
+    default 200
+    range 0 255
+    help
+      Default value (brightness) when no valid settings are loaded.
 
 config RGB_MATRIX_DEFAULT_SPD
     int "Default animation speed (0-255)"

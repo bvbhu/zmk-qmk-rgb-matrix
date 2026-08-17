@@ -30,9 +30,8 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 
-/* ===== ZMK headers ===== */
-#include "qmk_compat.h"
 #include "post_config.h"
+#include "qmk_compat.h"
 
 #if defined(RGB_MATRIX_KEYPRESSES) || defined(RGB_MATRIX_KEYRELEASES)
 #	define RGB_MATRIX_KEYREACTIVE_ENABLED

@@ -50,3 +50,5 @@
             { LISTIFY(ZMK_RGB_MT_LEN, ZMK_RGB_POS_RC_ENTRY, (, ), 0) }
 #    endif
 #endif
+/* matrix_transform.h 的 RC(row,col) 只在文件内部使用，末尾 #undef 掉防泄露。 */
+#undef RC

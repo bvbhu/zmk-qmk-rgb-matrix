@@ -9,11 +9,14 @@
 
 #pragma once
 
-#include <dt-bindings/zmk/modifiers.h>
 #include <stdint.h>
 #include <zmk/hid.h>
 #include <zmk/hid_indicators.h>
 #include <zmk/keymap.h>
+
+/* MOD_LCTL / MOD_RCTL / MOD_LSFT / MOD_RSFT /
+ * MOD_LALT / MOD_RALT / MOD_LGUI / MOD_RGUI
+ * 由 <zmk/hid.h> 定义（HID Usage Page 7 标准值），无需重复定义。 */
 
 #define PACKED __attribute__((packed))
 

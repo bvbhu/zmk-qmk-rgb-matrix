@@ -106,10 +106,8 @@ endforeach()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/rgb_matrix_generated_config.h"
     "${RGB_MATRIX_GEN_H}")
 
-# 将生成文件所在目录加入包含路径
-target_include_directories(${ZEPHYR_CURRENT_TARGET} PRIVATE
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
+# 将生成文件所在目录加入包含路径（使用 zephyr_include_directories 宏）
+zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # ===== 注入键盘仓 keymap.c =====
 # 支持两种命名：keymap.c 或 <keyboard>.keymap.c
@@ -118,20 +116,8 @@ file(GLOB KEYMAP_SOURCES
     "${ZMK_CONFIG}/*.keymap.c"
 )
 if(KEYMAP_SOURCES)
-    target_sources(${ZEPHYR_CURRENT_TARGET} PRIVATE ${KEYMAP_SOURCES})
+    zephyr_sources(${KEYMAP_SOURCES})
 endif()
 
 # 将键盘仓 config/ 加入包含路径（供 keymap.c 使用）
-target_include_directories(${ZEPHYR_CURRENT_TARGET} PRIVATE
-    ${ZMK_CONFIG}
-)
-
-# 模块源码包含路径（keymap.c 通过 rgb_matrix_generated_config.h → rgb_matrix_types.h
-# → rgb_matrix_effects.inc 触发 effect_runner_*.h 的编译，需要 animations/runners/）
-set(_RGB_MATRIX_MODULE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../..")
-target_include_directories(${ZEPHYR_CURRENT_TARGET} PRIVATE
-    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix
-    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/controller
-    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/animations
-    ${_RGB_MATRIX_MODULE_ROOT}/src/rgb_matrix/animations/runners
-)
+zephyr_include_directories(${ZMK_CONFIG})

@@ -4,30 +4,17 @@
 # 模板文件 keymap.c（LED 布局示例）不包含在内，由各键盘仓通过
 # snippet 注入各自的 keymap.c。
 #
-# 包含路径：
-# - 模块源码目录（PUBLIC，供本模块及下游使用）
-# - 键盘仓 config/ 目录（由 snippet 通过 PRIVATE 加入，包含 keymap.c）
-# - 生成的 rgb_matrix_generated_config.h（由 snippet 生成并加入 include 路径）
+# 使用 zephyr_include_directories() / zephyr_sources() 宏，
+# 这些宏将配置传播到 app 目标，不依赖 ZEPHYR_CURRENT_TARGET 是否为 INTERFACE。
 
-# 模块源码包含路径（INTERFACE 确保传播到下游所有目标）
-target_include_directories(${ZEPHYR_CURRENT_TARGET} INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/controller
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations/runners
+zephyr_include_directories(src/rgb_matrix)
+zephyr_include_directories(src/rgb_matrix/controller)
+zephyr_include_directories(src/rgb_matrix/animations)
+zephyr_include_directories(src/rgb_matrix/animations/runners)
+
+zephyr_sources(
+    src/rgb_matrix/controller/rgb_matrix.c
+    src/rgb_matrix/controller/rgb_matrix_settings.c
+    src/rgb_matrix/controller/qmk_compat.c
+    src/rgb_matrix/controller/lib8tion.c
 )
-
-# 显式加到 app 目标（双重保险，防止 ZEPHYR_CURRENT_TARGET 指向内部目标）
-target_include_directories(app PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/controller
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations
-    ${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/animations/runners
-)
-
-# 仅编译 controller/ 下的模块源码（排除模板 keymap.c）
-file(GLOB RGB_MATRIX_SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/src/rgb_matrix/controller/*.c"
-)
-
-target_sources(${ZEPHYR_CURRENT_TARGET} PRIVATE ${RGB_MATRIX_SOURCES})

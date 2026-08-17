@@ -15,18 +15,12 @@ zephyr_include_directories(src/rgb_matrix/animations/runners)
 zephyr_include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # ================================================================
-# 注入键盘仓 keymap.c（定义 g_led_config 与 indicators）
-# 使用 GLOB_RECURSE 覆盖两种路径结构：
-#   - silicon65: config/boards/shields/silicon65/silicon65.keymap.c
-#   - TL96:     config/tl96.keymap.c
-# 将 ZMK_CONFIG 加入 include 路径，供 keymap.c 使用。
+# keymap.c 注入说明：
+# 各键盘仓在其自己的 CMakeLists.txt 中通过
+#   target_sources(app PRIVATE <path>/xxx.keymap.c)
+# 注入（定义 g_led_config 与 indicators），并自行添加 include 路径。
+# 模块不再 GLOB 注入，避免与 app 目标重复编译导致多重定义。
 # ================================================================
-file(GLOB_RECURSE RGB_MATRIX_KEYMAP_SOURCES "${ZMK_CONFIG}/*.keymap.c")
-if(RGB_MATRIX_KEYMAP_SOURCES)
-    zephyr_sources(${RGB_MATRIX_KEYMAP_SOURCES})
-    message(STATUS "rgb_matrix: injected keymap.c sources: ${RGB_MATRIX_KEYMAP_SOURCES}")
-endif()
-zephyr_include_directories(${ZMK_CONFIG})
 
 zephyr_sources(
     src/rgb_matrix/rgb_matrix.c

@@ -114,7 +114,6 @@ last_hit_t g_last_hit_tracker;
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 
 // internals
-static bool suspend_state = false;
 static uint8_t rgb_last_enable = UINT8_MAX;
 static uint8_t rgb_last_effect = UINT8_MAX;
 static effect_params_t rgb_effect_params = { 0, LED_FLAG_ALL, false };

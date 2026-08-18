@@ -96,11 +96,12 @@ config RGB_MATRIX_LED_PROCESS_LIMIT
 
 config RGB_WORKQ_STACK_SIZE
     int "RGB workqueue stack size (bytes)"
-    default 2048
+    default 1024
     range 0 4096
     help
       If > 0, use a dedicated workqueue for RGB rendering.
       If 0, use the system workqueue (saves RAM).
+      Recommended minimum: 640 bytes for STM32F072. Set to 0 to use the system workqueue.
 
 config RGB_MATRIX_HUE_STEP
     int "Hue step"

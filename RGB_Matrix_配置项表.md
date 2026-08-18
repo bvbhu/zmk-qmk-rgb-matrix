@@ -31,13 +31,12 @@
 
 | 配置项 | 类型 | 默认值 | 范围 | 说明 |
 |--------|------|--------|------|------|
-| `RGB_MATRIX_CENTER_X` | int | `108` | 0~255 | 对称/波浪类灯效中心 X |
-| `RGB_MATRIX_CENTER_Y` | int | `32` | 0~255 | 对称/波浪类灯效中心 Y |
-| `RGB_MATRIX_LED_FLUSH_LIMIT` | int | `16` | 1~100 | LED 刷新间隔（ms），即灯效帧率节流 |
-| `RGB_MATRIX_LED_PROCESS_LIMIT` | int | `(LED_COUNT+4)/5` | 1~255 | 每帧最多处理的 LED 数（分帧渲染），必须 `> 0`； |
-| `RGB_WORKQ_STACK_SIZE` | int | `2048` | 建议512~2048或0 | 独立渲染 workqueue 栈（字节）；`0` = 复用系统 workqueue（省 RAM） |
+| `RGB_MATRIX_CENTER_X` | int | `108` | 0~255 | 灯效显示区域中心横坐标 |
+| `RGB_MATRIX_CENTER_Y` | int | `32` | 0~255 | 灯效显示区域中心纵坐标 |
+| `RGB_MATRIX_LED_FLUSH_LIMIT` | int | `16` | 1~100 | LED 刷新间隔（ms），控制灯效帧率 |
+| `RGB_MATRIX_LED_PROCESS_LIMIT` | int | `RGB_MATRIX_LED_COUNT` | 1~255 | 每帧最多处理的 LED 数（分帧渲染），必须 `> 0`； |
+| `RGB_WORKQ_STACK_SIZE` | int | `1024` | 建议640~1024或0 | 独立低优先workqueue栈（字节）；`0` = 复用系统 workqueue（省 RAM） |
 
-> `CENTER` 参考计算：`x = 255 * 物理列号 / (总列数 - 1)`，`y = 255 * 物理行号 / (总行数 - 1)`。
 
 ## 4. 步进值（键控调节增量）
 

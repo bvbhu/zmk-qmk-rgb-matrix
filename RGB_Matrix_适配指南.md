@@ -61,11 +61,11 @@ led_config_t g_led_config =
         /* ... 其余行 ... */
     },
     {
-        /* [1] point[LED_COUNT]：每颗 LED 物理坐标 {x, y}，范围 0~255 */
+        /* [1] point[LED_COUNT]：每颗 LED 物理坐标 {x, y}，范围 0~255 ,注意按照灯珠编号顺序填写而不是行列顺序*/
         { 0, 64 }, { 16, 64 }, { 32, 64 }, /* ... */
     },
     {
-        /* [2] flags[LED_COUNT]：LED_FLAG_KEYLIGHT / UNDERGLOW / MODIFIER / INDICATOR */
+        /* [2] flags[LED_COUNT]：LED_FLAG_KEYLIGHT / UNDERGLOW / MODIFIER / INDICATOR ，也是灯珠编号顺序*/
         LED_FLAG_KEYLIGHT, LED_FLAG_KEYLIGHT, /* ... */
     }
 };
@@ -137,7 +137,7 @@ CONFIG_WS2812_STRIP=y
 &rgb_ug RGB_TOG      &rgb_ug RGB_EFF      &rgb_ug RGB_HUI
 &rgb_ug RGB_BRI      &rgb_ug RGB_SPI
 
-// 直选灯效（mode 为灯效枚举值，从 1 开始按 rgb_matrix_effects.inc 中已启用灯效顺序编号）
+// 切换指定灯效（mode 为灯效枚举值，从 1 开始按 rgb_matrix_effects.inc 中已启用灯效顺序编号）
 &rgb_ug RGB_EFS_CMD 3
 
 // 直接设置颜色（h/s/v 均为 0-255）

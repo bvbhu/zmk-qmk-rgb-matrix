@@ -43,6 +43,10 @@
 #if defined(RGB_MATRIX_KEYREACTIVE_ENABLED) || \
 	(defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP))
 
+/* 保存 RC 原始定义（modifiers.h 的 RC(keycode)），避免与 matrix_transform.h 的 RC(row,col) 冲突 */
+#pragma push_macro("RC")
+#undef RC
+
 #	include <dt-bindings/zmk/matrix_transform.h>
 #	include <zephyr/devicetree.h>
 
@@ -55,13 +59,11 @@
 #		define RGB_MATRIX_POS_TO_RC_LEN ZMK_RGB_MT_LEN
 #		define RGB_MATRIX_POS_TO_RC_MAP \
 			{ LISTIFY(ZMK_RGB_MT_LEN, ZMK_RGB_POS_RC_ENTRY, (, ), 0) }
-/* 中间宏用完即弃，防止污染包含本头文件的编译单元 */
-#		undef ZMK_RGB_MT_NODE
-#		undef ZMK_RGB_MT_LEN
+/* ZMK_RGB_POS_RC_ENTRY 是 LISTIFY 内部宏，用完即弃 */
 #		undef ZMK_RGB_POS_RC_ENTRY
 #	endif /* DT_HAS_CHOSEN(zmk_matrix_transform) */
 
-/* matrix_transform.h 的 RC(row,col) 只在文件内部使用，末尾 #undef 掉防泄露。 */
-#	undef RC
+/* 恢复 RC 原始定义（modifiers.h 的 RC(keycode)） */
+#pragma pop_macro("RC")
 
 #endif /* key-reactive / framebuffer 灯效启用 */

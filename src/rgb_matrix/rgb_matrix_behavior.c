@@ -47,7 +47,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
  * 两者同时编译会导致 device 重复注册链接错误。
  * 模块强制默认 CONFIG_ZMK_RGB_UNDERGLOW=n，如有键盘仓设为 y 则明确报错。 */
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
-#error "CONFIG_ZMK_RGB_UNDERGLOW=y conflicts with ZMK_RGB_MATRIX. " \
+#	error "CONFIG_ZMK_RGB_UNDERGLOW=y conflicts with ZMK_RGB_MATRIX. " \
        "Set CONFIG_ZMK_RGB_UNDERGLOW=n in your keyboard .conf (this is the default)."
 #endif
 
@@ -126,9 +126,9 @@ static int rgb_matrix_settings_commit(void)
 
 SETTINGS_STATIC_HANDLER_DEFINE(rgb_matrix, "rgb_matrix",
 							   NULL,						/* h_get */
-								   rgb_matrix_settings_set,		/* h_set */
-								   rgb_matrix_settings_commit,	/* h_commit */
-								   rgb_matrix_settings_export); /* h_export */
+							   rgb_matrix_settings_set,		/* h_set */
+							   rgb_matrix_settings_commit,	/* h_commit */
+							   rgb_matrix_settings_export); /* h_export */
 
 /* 初始化 settings 延迟保存工作项 */
 void rgb_matrix_settings_init(void)
@@ -164,7 +164,7 @@ void rgb_matrix_settings_init(void)
  * binding_released 只消费（不穿透），不做任何处理。 */
 
 static int on_rgb_ug_binding_pressed(struct zmk_behavior_binding* binding,
-				     struct zmk_behavior_binding_event event)
+									 struct zmk_behavior_binding_event event)
 {
 	(void)event;
 
@@ -294,10 +294,12 @@ static int on_rgb_ug_binding_pressed(struct zmk_behavior_binding* binding,
 				rgb_task_state = STARTING;
 			}
 			break;
+#ifdef RGB_EFS_CMD
 		case RGB_EFS_CMD:
 			/* 直接切换到 param2 指定的灯效枚举值（从 1 开始，
 			 * 按 rgb_matrix_effects.inc 中已启用灯效的顺序编号），
-			 * 无效值或与当前相同时忽略 */
+			 * 无效值或与当前相同时忽略。
+			 * 依赖较新 ZMK 的定义 RGB_EFS_CMD，缺失时该 case 不编译。 */
 			if(rgb_matrix_config.enable)
 			{
 				uint8_t mode = (uint8_t)binding->param2;
@@ -308,8 +310,11 @@ static int on_rgb_ug_binding_pressed(struct zmk_behavior_binding* binding,
 				}
 			}
 			break;
+#endif
+#ifdef RGB_COLOR_HSB_CMD
 		case RGB_COLOR_HSB_CMD:
-			/* 直接设置颜色，param2 编码 (h << 16) | (s << 8) | v，均为 0-255 */
+			/* 直接设置颜色，param2 编码 (h << 16) | (s << 8) | v，均为 0-255。
+			 * 依赖较新 ZMK 支持的 RGB_COLOR_HSB_CMD，未定义时该 case 不编译。 */
 			if(rgb_matrix_config.enable)
 			{
 				uint32_t hsb = (uint32_t)binding->param2;
@@ -320,6 +325,7 @@ static int on_rgb_ug_binding_pressed(struct zmk_behavior_binding* binding,
 					rgb_matrix_config.hsv.v = RGB_MATRIX_MAXIMUM_BRIGHTNESS;
 			}
 			break;
+#endif
 		default:
 			break;
 	}
@@ -329,7 +335,7 @@ static int on_rgb_ug_binding_pressed(struct zmk_behavior_binding* binding,
 }
 
 static int on_rgb_ug_binding_released(struct zmk_behavior_binding* binding,
-				      struct zmk_behavior_binding_event event)
+									  struct zmk_behavior_binding_event event)
 {
 	(void)binding;
 	(void)event;
@@ -345,20 +351,34 @@ static const struct behavior_driver_api rgb_ug_driver_api = {
  * 与 ZMK 内置 underglow 驱动使用相同的 DT_DRV_COMPAT 和 rgb_ug 节点。
  * 内置驱动不编译时本驱动接管，内置驱动编译时本文件因 #if IS_ENABLED 报错。 */
 BEHAVIOR_DT_DEFINE(DT_NODELABEL(rgb_ug), NULL, NULL, NULL, NULL, POST_KERNEL,
-		   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rgb_ug_driver_api);
+				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rgb_ug_driver_api);
 
 /* ================================================================
  * 按键事件监听器 (Key Reactive / Framebuffer 灯效)
  * ================================================================
- * 监听所有按键的按下/释放，转发给 rgb_matrix_handle_position_event。
+ * 监听所有按键的按下/释放，将 ZMK position 转换为物理 (row, col)
+ * 后转发给 rgb_matrix_handle_key_event。
  * 不捕获事件 (返回 BUBBLE)，仅旁路记录命中点，不影响其他监听器。 */
 #if defined(RGB_MATRIX_KEYREACTIVE_ENABLED) || \
 	(defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP))
+
+/* ===== 按键事件 position → (row, col) 映射表，由 post_config.h 生成 */
+static const struct
+{
+	uint8_t row;
+	uint8_t col;
+} zmk_rgb_pos_to_rc[RGB_MATRIX_POS_TO_RC_LEN] = RGB_MATRIX_POS_TO_RC_MAP;
+
 static int rgb_matrix_key_event_listener(const zmk_event_t* eh)
 {
 	const struct zmk_position_state_changed* ev = as_zmk_position_state_changed(eh);
 	if(ev == NULL) return ZMK_EV_EVENT_BUBBLE;
-	rgb_matrix_handle_position_event(ev->position, ev->state);
+	
+	uint8_t row, column;
+	if(ev->position >= RGB_MATRIX_POS_TO_RC_LEN) return ZMK_EV_EVENT_BUBBLE;
+	row = zmk_rgb_pos_to_rc[ev->position].row;
+	column = zmk_rgb_pos_to_rc[ev->position].col;
+	rgb_matrix_handle_key_event(row, column, ev->state);
 	return ZMK_EV_EVENT_BUBBLE;
 }
 

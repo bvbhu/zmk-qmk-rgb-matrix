@@ -65,7 +65,7 @@ enum rgb_matrix_effects {
 // -----Begin rgb effect enum macros-----
 #define RGB_MATRIX_EFFECT(name, ...) RGB_MATRIX_##name,
 #include "rgb_matrix_effects.inc"
-#undef RGB_MATRIX_EFFECT 
+#undef RGB_MATRIX_EFFECT
 
     RGB_MATRIX_EFFECT_MAX
 };
@@ -75,14 +75,10 @@ void eeconfig_update_rgb_matrix_default(void);
 uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, uint8_t column, uint8_t *led_i);
 uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *led_i);
 
-/* ===== 按键事件接入 (Key Reactive / Framebuffer 灯效) =====
- * QMK 风格：以物理 (row, col) 触发，更新 last_hit_buffer 与 Framebuffer。
- * ZMK 适配：rgb_matrix_handle_position_event 将 keymap position 转为 (row, col) 后转发。
- * 仅在启用 Key Reactive 或热图灯效时可用。 */
+/* ===== 按键事件接入 (Key Reactive / Framebuffer 灯效) ===== */
 #if defined(RGB_MATRIX_KEYREACTIVE_ENABLED) || \
 	(defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP))
 void rgb_matrix_handle_key_event(uint8_t row, uint8_t column, bool pressed);
-void rgb_matrix_handle_position_event(uint32_t position, bool pressed);
 #endif
 #if defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP)
 void process_rgb_matrix_typing_heatmap(uint8_t row, uint8_t column);
@@ -107,10 +103,8 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max);
 
 void rgb_matrix_init(void);
 
-void rgb_matrix_update_pwm_buffers(void);
 
-static inline bool rgb_matrix_check_finished_leds(uint8_t led_idx)
-{
+static inline bool rgb_matrix_check_finished_leds(uint8_t led_idx) {
 #if defined(RGB_MATRIX_SPLIT)
     if (is_keyboard_left()) {
         uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;

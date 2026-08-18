@@ -4,7 +4,6 @@
 #pragma once
 
 // clang-format off
-
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <dt-bindings/zmk/matrix_transform.h>

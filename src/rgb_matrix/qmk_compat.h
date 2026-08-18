@@ -18,7 +18,7 @@
  * 未启用时 host_keyboard_led_state() 不定义，keymap.c 中的
  * 指示灯回调不可使用该函数（编译报错提示开启配置）。 */
 #ifdef CONFIG_ZMK_HID_INDICATORS
-#include <zmk/hid_indicators.h>
+#	include <zmk/hid_indicators.h>
 #endif
 
 /* MOD_LCTL / MOD_RCTL / MOD_LSFT / MOD_RSFT /

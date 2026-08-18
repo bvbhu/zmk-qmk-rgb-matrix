@@ -14,7 +14,7 @@
 | `FLASH` | bool | `y`（随 `RGB_MATRIX_PERSISTENCE`） | Flash 驱动 |
 | `FLASH_PAGE_LAYOUT` | bool | `y`（随 `RGB_MATRIX_PERSISTENCE`） | Flash 分区布局（NVS 依赖） |
 | `FLASH_MAP` | bool | `y`（随 `RGB_MATRIX_PERSISTENCE`） | Flash 映射 API |
-| `ZMK_HID_INDICATORS` | bool | `y` | HID 指示灯（Caps/Num/Scroll Lock 查询）。未启用时 `host_keyboard_led_state()` 不编译 |
+| `ZMK_HID_INDICATORS` | bool | `y` | HID 指示灯（Caps/Num/Scroll Lock 查询）。未启用时不可使用`host_keyboard_led_state()`  |
 | `ZMK_RGB_UNDERGLOW` | bool | `n` | ZMK 内置 underglow 由模块接管 `&rgb_ug`，默认关闭避免双重处理 |
 
 > 以上子系统默认值均用 `default` 而非强制 `select` 实现：在键盘仓显式写 `CONFIG_SETTINGS=n` 等仍可关闭，此时模块相应功能（持久化）自动裁剪。
@@ -65,80 +65,70 @@
 
 ## 6. 灯效开关
 
-全部为 `bool`、默认 `n`，置 `y` 启用。`SOLID_COLOR`（单色常亮）始终内置，无开关。
+全部为 `bool`、默认 `n`，置 `y` 启用。
 
-### 6.1 普通灯效
+枚举值用于 `&rgb_ug RGB_EFS_CMD <mode>` 键码切换到指定灯效，`<mode>` 即为枚举值，表中枚举值为启用所有灯效时的值，如有未启用灯效，后续枚举值前移。
 
-| 配置项 | 灯效 |
-|--------|------|
-| `RGB_MATRIX_EFFECT_ALPHAS_MODS` | 主键区/修饰键双色（Alphas Mods） |
-| `RGB_MATRIX_EFFECT_GRADIENT_UP_DOWN` | 上下渐变 |
-| `RGB_MATRIX_EFFECT_GRADIENT_LEFT_RIGHT` | 左右渐变 |
-| `RGB_MATRIX_EFFECT_BREATHING` | 呼吸 |
-| `RGB_MATRIX_EFFECT_BAND_SAT` | 饱和度彩带 |
-| `RGB_MATRIX_EFFECT_BAND_VAL` | 亮度彩带 |
-| `RGB_MATRIX_EFFECT_BAND_PINWHEEL_SAT` | 饱和度风车彩带 |
-| `RGB_MATRIX_EFFECT_BAND_PINWHEEL_VAL` | 亮度风车彩带 |
-| `RGB_MATRIX_EFFECT_BAND_SPIRAL_SAT` | 饱和度螺旋彩带 |
-| `RGB_MATRIX_EFFECT_BAND_SPIRAL_VAL` | 亮度螺旋彩带 |
-| `RGB_MATRIX_EFFECT_CYCLE_ALL` | 全局色相循环 |
-| `RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT` | 左右彩虹循环 |
-| `RGB_MATRIX_EFFECT_CYCLE_UP_DOWN` | 上下彩虹循环 |
-| `RGB_MATRIX_EFFECT_RAINBOW_MOVING_CHEVRON` | 移动人字形彩虹 |
-| `RGB_MATRIX_EFFECT_CYCLE_OUT_IN` | 由外向内循环 |
-| `RGB_MATRIX_EFFECT_CYCLE_OUT_IN_DUAL` | 双向由外向内循环 |
-| `RGB_MATRIX_EFFECT_CYCLE_PINWHEEL` | 风车循环 |
-| `RGB_MATRIX_EFFECT_CYCLE_SPIRAL` | 螺旋循环 |
-| `RGB_MATRIX_EFFECT_DUAL_BEACON` | 双信标 |
-| `RGB_MATRIX_EFFECT_RAINBOW_BEACON` | 彩虹信标 |
-| `RGB_MATRIX_EFFECT_RAINBOW_PINWHEELS` | 彩虹风车 |
-| `RGB_MATRIX_EFFECT_FLOWER_BLOOMING` | 花朵绽放 |
-| `RGB_MATRIX_EFFECT_RAINDROPS` | 雨滴 |
-| `RGB_MATRIX_EFFECT_JELLYBEAN_RAINDROPS` | 彩豆雨滴 |
-| `RGB_MATRIX_EFFECT_HUE_BREATHING` | 色相呼吸 |
-| `RGB_MATRIX_EFFECT_HUE_PENDULUM` | 色相摆动 |
-| `RGB_MATRIX_EFFECT_HUE_WAVE` | 色相波 |
-| `RGB_MATRIX_EFFECT_PIXEL_RAIN` | 像素雨 |
-| `RGB_MATRIX_EFFECT_PIXEL_FLOW` | 像素流 |
-| `RGB_MATRIX_EFFECT_PIXEL_FRACTAL` | 像素分形 |
-| `RGB_MATRIX_EFFECT_STARLIGHT` | 星光 |
-| `RGB_MATRIX_EFFECT_STARLIGHT_DUAL_SAT` | 双饱和度星光 |
-| `RGB_MATRIX_EFFECT_STARLIGHT_DUAL_HUE` | 双色相星光 |
-| `RGB_MATRIX_EFFECT_STARLIGHT_SMOOTH` | 平滑星光 |
-| `RGB_MATRIX_EFFECT_RIVERFLOW` | 河流 |
+| 值 | 配置项 | 分类 | 灯效 |
+|----|--------|------|------|
+| `1` | – | 普通 | `RGB_MATRIX_SOLID_COLOR` 单色常亮（始终内置） |
+| `2` | `RGB_MATRIX_EFFECT_ALPHAS_MODS` | 普通 | 主键区/修饰键双色（Alphas Mods） |
+| `3` | `RGB_MATRIX_EFFECT_GRADIENT_UP_DOWN` | 普通 | 上下渐变 |
+| `4` | `RGB_MATRIX_EFFECT_GRADIENT_LEFT_RIGHT` | 普通 | 左右渐变 |
+| `5` | `RGB_MATRIX_EFFECT_BREATHING` | 普通 | 呼吸 |
+| `6` | `RGB_MATRIX_EFFECT_BAND_SAT` | 普通 | 饱和度彩带 |
+| `7` | `RGB_MATRIX_EFFECT_BAND_VAL` | 普通 | 亮度彩带 |
+| `8` | `RGB_MATRIX_EFFECT_BAND_PINWHEEL_SAT` | 普通 | 饱和度风车彩带 |
+| `9` | `RGB_MATRIX_EFFECT_BAND_PINWHEEL_VAL` | 普通 | 亮度风车彩带 |
+| `10` | `RGB_MATRIX_EFFECT_BAND_SPIRAL_SAT` | 普通 | 饱和度螺旋彩带 |
+| `11` | `RGB_MATRIX_EFFECT_BAND_SPIRAL_VAL` | 普通 | 亮度螺旋彩带 |
+| `12` | `RGB_MATRIX_EFFECT_CYCLE_ALL` | 普通 | 全局色相循环 |
+| `13` | `RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT` | 普通 | 左右彩虹循环 |
+| `14` | `RGB_MATRIX_EFFECT_CYCLE_UP_DOWN` | 普通 | 上下彩虹循环 |
+| `15` | `RGB_MATRIX_EFFECT_RAINBOW_MOVING_CHEVRON` | 普通 | 移动人字形彩虹 |
+| `16` | `RGB_MATRIX_EFFECT_CYCLE_OUT_IN` | 普通 | 由外向内循环 |
+| `17` | `RGB_MATRIX_EFFECT_CYCLE_OUT_IN_DUAL` | 普通 | 双向由外向内循环 |
+| `18` | `RGB_MATRIX_EFFECT_CYCLE_PINWHEEL` | 普通 | 风车循环 |
+| `19` | `RGB_MATRIX_EFFECT_CYCLE_SPIRAL` | 普通 | 螺旋循环 |
+| `20` | `RGB_MATRIX_EFFECT_DUAL_BEACON` | 普通 | 双信标 |
+| `21` | `RGB_MATRIX_EFFECT_RAINBOW_BEACON` | 普通 | 彩虹信标 |
+| `22` | `RGB_MATRIX_EFFECT_RAINBOW_PINWHEELS` | 普通 | 彩虹风车 |
+| `23` | `RGB_MATRIX_EFFECT_FLOWER_BLOOMING` | 普通 | 花朵绽放 |
+| `24` | `RGB_MATRIX_EFFECT_RAINDROPS` | 普通 | 雨滴 |
+| `25` | `RGB_MATRIX_EFFECT_JELLYBEAN_RAINDROPS` | 普通 | 彩豆雨滴 |
+| `26` | `RGB_MATRIX_EFFECT_HUE_BREATHING` | 普通 | 色相呼吸 |
+| `27` | `RGB_MATRIX_EFFECT_HUE_PENDULUM` | 普通 | 色相摆动 |
+| `28` | `RGB_MATRIX_EFFECT_HUE_WAVE` | 普通 | 色相波 |
+| `29` | `RGB_MATRIX_EFFECT_PIXEL_RAIN` | 普通 | 像素雨 |
+| `30` | `RGB_MATRIX_EFFECT_PIXEL_FLOW` | 普通 | 像素流 |
+| `31` | `RGB_MATRIX_EFFECT_PIXEL_FRACTAL` | 普通 | 像素分形 |
+| `32` | `RGB_MATRIX_EFFECT_TYPING_HEATMAP` | Framebuffer | 打字热力图 |
+| `33` | `RGB_MATRIX_EFFECT_DIGITAL_RAIN` | Framebuffer | 数字雨 |
+| `34` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_SIMPLE` | Key Reactive | 单色按键点亮（简单） |
+| `35` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE` | Key Reactive | 单色按键点亮 |
+| `36` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_WIDE` | Key Reactive | 单色宽幅点亮 |
+| `37` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTIWIDE` | Key Reactive | 多键宽幅点亮 |
+| `38` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_CROSS` | Key Reactive | 十字点亮 |
+| `39` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTICROSS` | Key Reactive | 多键十字点亮 |
+| `40` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_NEXUS` | Key Reactive | Nexus 点亮 |
+| `41` | `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTINEXUS` | Key Reactive | 多键 Nexus 点亮 |
+| `42` | `RGB_MATRIX_EFFECT_SPLASH` | Key Reactive | 彩色溅射（最近一键） |
+| `43` | `RGB_MATRIX_EFFECT_MULTISPLASH` | Key Reactive | 彩色溅射（多键） |
+| `44` | `RGB_MATRIX_EFFECT_SOLID_SPLASH` | Key Reactive | 单色溅射（最近一键） |
+| `45` | `RGB_MATRIX_EFFECT_SOLID_MULTISPLASH` | Key Reactive | 单色溅射（多键） |
+| `46` | `RGB_MATRIX_EFFECT_STARLIGHT_SMOOTH` | 普通 | 平滑星光 |
+| `47` | `RGB_MATRIX_EFFECT_STARLIGHT` | 普通 | 星光 |
+| `48` | `RGB_MATRIX_EFFECT_STARLIGHT_DUAL_SAT` | 普通 | 双饱和度星光 |
+| `49` | `RGB_MATRIX_EFFECT_STARLIGHT_DUAL_HUE` | 普通 | 双色相星光 |
+| `50` | `RGB_MATRIX_EFFECT_RIVERFLOW` | 普通 | 河流 |
 
-### 6.2 Key Reactive 按键响应灯效（常驻 ~82 B BSS）
-
-| 配置项 | 灯效 |
-|--------|------|
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_SIMPLE` | 单色按键点亮（简单） |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE` | 单色按键点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_WIDE` | 单色宽幅点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTIWIDE` | 多键宽幅点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_CROSS` | 十字点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTICROSS` | 多键十字点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_NEXUS` | Nexus 点亮 |
-| `RGB_MATRIX_EFFECT_SOLID_REACTIVE_MULTINEXUS` | 多键 Nexus 点亮 |
-| `RGB_MATRIX_EFFECT_SPLASH` | 彩色溅射（最近一键） |
-| `RGB_MATRIX_EFFECT_MULTISPLASH` | 彩色溅射（多键） |
-| `RGB_MATRIX_EFFECT_SOLID_SPLASH` | 单色溅射（最近一键） |
-| `RGB_MATRIX_EFFECT_SOLID_MULTISPLASH` | 单色溅射（多键） |
-
-> Single/Multi 变体共用同一动画文件与数学函数，区别仅是击键记录遍历起点：Single 只响应最近一次击键，Multi 响应全部击键记录（上限 8 条）。
-> 依赖设备树 `zmk,matrix_transform`，缺失时自动禁用。
-
-### 6.3 Framebuffer 灯效（常驻 ~96 B BSS）
-
-| 配置项 | 灯效 |
-|--------|------|
-| `RGB_MATRIX_EFFECT_TYPING_HEATMAP` | 打字热力图 |
-| `RGB_MATRIX_EFFECT_DIGITAL_RAIN` | 数字雨 |
-
-> 依赖设备树 `zmk,matrix_transform`，缺失时自动禁用。
+> Key Reactive灯效 Single变体只处理最近一次击键，Multi变体处理更多（上限 8 条）击键记录。
+>
+> Key Reactive 和 Framebuffer 灯效都依赖设备树 `zmk,matrix_transform`，缺失时自动禁用。
 
 ## 7. `&rgb_ug` 键码一览
 
-模块实现了 ZMK `dt-bindings/zmk/rgb.h` 的全部命令（param1），在 keymap 中通过 `&rgb_ug <命令>` 使用：
+模块复用了 ZMK `&rgb_ug` 的键码，功能一致。
 
 | 键码 | 作用 | Shift 反向 |
 |------|------|-----------|
@@ -149,17 +139,11 @@
 | `RGB_BRI` / `RGB_BRD` | 亮度 + / −（受 `MAXIMUM_BRIGHTNESS` 限制） | 支持 |
 | `RGB_SPI` / `RGB_SPD` | 速度 + / − | 支持 |
 | `RGB_EFF` / `RGB_EFR` | 下一个 / 上一个灯效 | 支持 |
-| `RGB_EFS_CMD <mode>` | 直选灯效：`mode` 为灯效枚举值，从 1 起按 `rgb_matrix_effects.inc` 中已启用灯效顺序编号（`SOLID_COLOR` = 1），无效值忽略 | – |
-| `RGB_COLOR_HSB(h, s, v)` | 直接设置颜色：h/s/v 均为 0~255，v 超过 `MAXIMUM_BRIGHTNESS` 会被 clamp | – |
+| `RGB_EFS_CMD <mode>` | 切换到指定灯效 | – |
+| `RGB_COLOR_HSB(h, s, v)` | 直接设置颜色：h/s/v 均为 0~255，（亮度受 `MAXIMUM_BRIGHTNESS` 限制）  | – |
 
-示例：
 
-```dts
-&rgb_ug RGB_EFS_CMD 3                       // 直选第 3 号灯效
-&rgb_ug RGB_COLOR_HSB(170, 255, 200)        // 直接设置青蓝色
-```
-
-> `RGB_EFS_CMD` / `RGB_COLOR_HSB` 为较新 ZMK 引入的命令，需 ZMK 固件包含对应 `rgb.h` 定义。
+> `RGB_EFS_CMD` / `RGB_COLOR_HSB` 为较新 ZMK 引入的命令，通过条件编译兼容。
 
 ## 8. LED 标志位（keymap.c 布局用）
 

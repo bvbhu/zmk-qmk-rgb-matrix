@@ -373,7 +373,12 @@ BEHAVIOR_DT_DEFINE(DT_NODELABEL(rgb_ug), rgb_ug_init, NULL, NULL, NULL, POST_KER
 
 /* 运行时初始化的 position → (row, col) 映射表。
  * 不使用 LISTIFY 编译期初始化，因为 Zephyr LISTIFY 最多支持 91 个元素，
- * 而 96 键/全尺寸键盘的矩阵变换常超过此限制。 */
+ * 而 96 键/全尺寸键盘的矩阵变换常超过此限制。
+ *
+ * 使用 DT_PROP 获取完整数组再运行时索引，避免 DT_PROP_BY_IDX
+ * 需要编译期常量的限制。 */
+static const uint32_t zmk_rgb_map_data[RGB_MATRIX_POS_TO_RC_LEN] = DT_PROP(ZMK_RGB_MT_NODE, map);
+
 static struct
 {
 	uint8_t row;
@@ -384,8 +389,8 @@ void rgb_matrix_pos_to_rc_init(void)
 {
 	for(int i = 0; i < RGB_MATRIX_POS_TO_RC_LEN; i++)
 	{
-		zmk_rgb_pos_to_rc[i].row = (uint8_t)KT_ROW(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, i));
-		zmk_rgb_pos_to_rc[i].col = (uint8_t)KT_COL(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, i));
+		zmk_rgb_pos_to_rc[i].row = (uint8_t)KT_ROW(zmk_rgb_map_data[i]);
+		zmk_rgb_pos_to_rc[i].col = (uint8_t)KT_COL(zmk_rgb_map_data[i]);
 	}
 }
 

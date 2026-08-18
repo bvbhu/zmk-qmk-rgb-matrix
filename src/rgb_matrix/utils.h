@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "rgb_matrix_types.h"
 #include <stdint.h>
 
 uint8_t qadd8(uint8_t i, uint8_t j);

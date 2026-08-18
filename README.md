@@ -1,5 +1,9 @@
 # zmk-qmk-rgb-matrix
 
+> **⚠️ 免责声明**
+>
+> 本项目由 AI 生成，仍处于开发测试阶段，**不保证可用性**，请自行验证是否可用。
+
 QMK 风格的 RGB Matrix 灯效系统，移植自 QMK，适配 ZMK。支持全部 QMK RGB Matrix 灯效（含 Key Reactive 与 Framebuffer 灯效）。
 
 ## 核心特性
@@ -25,7 +29,7 @@ zmk-qmk-rgb-matrix/
 └── src/rgb_matrix/
     ├── rgb_matrix.h             # 公共 API（键盘仓 keymap.c 的唯一 include 入口）
     ├── rgb_matrix.c             # 控制器核心（状态机、渲染、按键事件）
-    ├── rgb_matrix_settings.c/.h # &rgb_ug 键码监听 + 持久化
+    ├── rgb_matrix_behavior.c    # &rgb_ug 行为驱动 + 设置持久化 + 按键监听
     ├── rgb_matrix_types.h       # 类型定义（led_config_t 等）
     ├── qmk_compat.c/.h          # QMK API 兼容层
     ├── post_config.h            # Key Reactive / Framebuffer 宏 + position→(row,col) 映射

@@ -29,7 +29,7 @@ config RGB_MATRIX_PERSISTENCE
 config ZMK_HID_INDICATORS
     default y if ZMK_RGB_MATRIX
 
-# 模块接管 &rgb_ug 键码，默认关闭 ZMK 内置 underglow 避免双重处理。
+# 模块不允许启用ZMK 内置 underglow
 config ZMK_RGB_UNDERGLOW
     default n if ZMK_RGB_MATRIX
 

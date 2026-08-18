@@ -24,25 +24,23 @@ extern "C" {
 #endif
 
 #include "rgb_matrix_types.h"
-#include "rgb_matrix_settings.h"
 
 #define RGB_MATRIX_LED_PROCESS_LIMIT RGB_MATRIX_LED_COUNT
 
 
-struct rgb_matrix_limits_t
-{
-	uint8_t led_min_index;
-	uint8_t led_max_index;
+struct rgb_matrix_limits_t {
+    uint8_t led_min_index;
+    uint8_t led_max_index;
 };
 
 struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 
 #define RGB_MATRIX_USE_LIMITS_ITER(min, max, iter)                   \
-	struct rgb_matrix_limits_t limits = rgb_matrix_get_limits(iter); \
-	uint8_t min = limits.led_min_index;                              \
-	uint8_t max = limits.led_max_index;                              \
-	(void)min;                                                       \
-	(void)max;
+    struct rgb_matrix_limits_t limits = rgb_matrix_get_limits(iter); \
+    uint8_t                    min    = limits.led_min_index;        \
+    uint8_t                    max    = limits.led_max_index;        \
+    (void)min;                                                       \
+    (void)max;
 
 #define RGB_MATRIX_USE_LIMITS(min, max) RGB_MATRIX_USE_LIMITS_ITER(min, max, params->iter)
 
@@ -51,23 +49,31 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 	{                                              \
 		rgb_matrix_set_color(i, r, g, b);          \
 	}
+/* TODO: 重构该宏的覆盖机制。当前指示灯颜色在灯效渲染周期内设置，
+ * 但部分灯效（如 PIXEL_RAIN）在后续渲染周期中不会刷新已被指示灯
+ * 设置的 LED 位置，导致指示灯关闭后颜色残留（未被灯效覆盖）。
+ * 需改为后渲染覆盖（post-render overlay）机制，在灯效全部渲染
+ * 完成后统一设置指示灯，确保指示灯关闭时灯效能正常覆盖该位置。 */
 
-	#define RGB_MATRIX_TEST_LED_FLAGS() \
-	if(!HAS_ANY_FLAGS(g_led_config.flags[i], params->flags)) continue
+#define RGB_MATRIX_TEST_LED_FLAGS() \
+    if (!HAS_ANY_FLAGS(g_led_config.flags[i], params->flags)) continue
 
-enum rgb_matrix_effects
-{
-	RGB_MATRIX_NONE = 0,
+enum rgb_matrix_effects {
+    RGB_MATRIX_NONE = 0,
+
+// --------------------------------------
+// -----Begin rgb effect enum macros-----
 #define RGB_MATRIX_EFFECT(name, ...) RGB_MATRIX_##name,
 #include "rgb_matrix_effects.inc"
 #undef RGB_MATRIX_EFFECT 
-	RGB_MATRIX_EFFECT_MAX
+
+    RGB_MATRIX_EFFECT_MAX
 };
 
 void eeconfig_update_rgb_matrix_default(void);
 
-uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, uint8_t column, uint8_t* led_i);
-uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t* led_i);
+uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, uint8_t column, uint8_t *led_i);
+uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *led_i);
 
 /* ===== 按键事件接入 (Key Reactive / Framebuffer 灯效) =====
  * QMK 风格：以物理 (row, col) 触发，更新 last_hit_buffer 与 Framebuffer。
@@ -95,7 +101,7 @@ void rgb_matrix_indicators(void);
 bool rgb_matrix_indicators_kb(void);
 bool rgb_matrix_indicators_user(void);
 
-void rgb_matrix_indicators_advanced(effect_params_t* params);
+void rgb_matrix_indicators_advanced(effect_params_t *params);
 bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max);
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max);
 
@@ -106,26 +112,19 @@ void rgb_matrix_update_pwm_buffers(void);
 static inline bool rgb_matrix_check_finished_leds(uint8_t led_idx)
 {
 #if defined(RGB_MATRIX_SPLIT)
-	if(is_keyboard_left())
-	{
-		uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
-		return led_idx < k_rgb_matrix_split[0];
-	}
-	else
-		return led_idx < RGB_MATRIX_LED_COUNT;
+    if (is_keyboard_left()) {
+        uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
+        return led_idx < k_rgb_matrix_split[0];
+    } else
+        return led_idx < RGB_MATRIX_LED_COUNT;
 #else
-	return led_idx < RGB_MATRIX_LED_COUNT;
+    return led_idx < RGB_MATRIX_LED_COUNT;
 #endif
 }
 
 extern rgb_config_t rgb_matrix_config;
 
-extern uint32_t g_rgb_timer;
-/* LED 布局声明：const / 非 const 可切换。
- * 键盘仓若将 g_led_config 定义为 const（节省 RAM），
- * 需在键盘仓 .conf 中设置 CONFIG_RGB_LED_CONFIG_CONST=y。
- * 使用 CONFIG_RGB_LED_CONFIG_CONST 直接引用 autoconf.h
- * 而非生成头文件，避免 Kconfig 未处理时取到默认值。 */
+extern uint32_t     g_rgb_timer;
 #if CONFIG_RGB_LED_CONFIG_CONST
 extern const led_config_t g_led_config;
 #else
@@ -141,6 +140,10 @@ extern uint8_t g_rgb_frame_buffer[MATRIX_ROWS][MATRIX_COLS];
 extern rgb_task_states rgb_task_state;
 rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv);
 int rgb_matrix_controller_init(void);
+
+/* ===== 设置持久化 API（由 rgb_matrix_behavior.c 提供）===== */
+void rgb_matrix_settings_init(void);
+void rgb_matrix_settings_save(void);
 
 /* ===== 键盘仓提供的符号（由键盘仓 keymap.c 定义）=====
  * 在键盘仓 config/keymap.c 中定义以下符号：

@@ -19,20 +19,10 @@ config RGB_MATRIX_PERSISTENCE
       (SETTINGS/NVS/FLASH). Set to n, or explicitly disable CONFIG_SETTINGS,
       to build without persistence and save flash/RAM.
 
-# 持久化依赖栈默认启用。使用 default 而非 select：
-# 用户显式设 CONFIG_SETTINGS=n 时仍可关闭，此时持久化代码自动裁剪。
-config SETTINGS
-    default y if RGB_MATRIX_PERSISTENCE
-config SETTINGS_NVS
-    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
-config NVS
-    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
-config FLASH
-    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
-config FLASH_PAGE_LAYOUT
-    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
-config FLASH_MAP
-    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+# 持久化依赖栈由 Zephyr/ZMK 自身提供，模块不重定义其内置符号。
+# 模块仅保留 RGB_MATRIX_PERSISTENCE 作为总开关；C 代码用
+# IS_ENABLED(CONFIG_SETTINGS) 判断是否编译持久化。ZMK 默认启用
+# SETTINGS/NVS/FLASH，未启用时持久化代码自动裁剪。
 
 # HID 指示灯（Caps/Num/Scroll Lock 状态查询）默认启用；
 # 未启用时 host_keyboard_led_state() 不编译，指示灯回调不可用。

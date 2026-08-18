@@ -1,11 +1,32 @@
 # RGB Matrix 模块 CMakeLists.txt
 #
-# 将 src/rgb_matrix/ 下的 .c 源文件加入编译。
-# 模板文件 keymap.c（LED 布局示例）不包含在内，由各键盘仓通过
-# snippet 注入各自的 keymap.c。
+# 模块源码、配置头文件生成、keymap.c 注入全部只在"当前构建确实是使用本模块的
+# 键盘"时启用：即 ZMK_CONFIG 下存在匹配当前 BOARD 或 SHIELD 的 <名>.keymap.c。
+# 这样 settings_reset 等诊断 shield 构建（无 keymap.c 匹配）不会编译模块源码，
+# 也不会把别的键盘的 keymap.c 注入进去。
 #
 # 使用 zephyr_include_directories() / zephyr_sources() 宏，
 # 这些宏将配置传播到 app 目标，不依赖 ZEPHYR_CURRENT_TARGET 是否为 INTERFACE。
+
+# ================================================================
+# 判定当前构建是否启用模块：查找匹配 BOARD / SHIELD 的 keymap.c
+#   - silicon65: config/boards/shields/silicon65/silicon65.keymap.c (SHIELD=silicon65)
+#   - TL96:      config/tl96.keymap.c                               (BOARD=tl96)
+#   - settings_reset: 无匹配 → 模块整体惰性
+# ================================================================
+set(RGB_MATRIX_ACTIVE FALSE)
+set(RGB_MATRIX_KEYMAP_SOURCES "")
+foreach(_kb ${BOARD} ${SHIELD})
+    file(GLOB_RECURSE _rgbm "${ZMK_CONFIG}/*${_kb}.keymap.c")
+    if(_rgbm)
+        set(RGB_MATRIX_ACTIVE TRUE)
+        list(APPEND RGB_MATRIX_KEYMAP_SOURCES ${_rgbm})
+    endif()
+endforeach()
+
+message(STATUS "rgb_matrix: active=${RGB_MATRIX_ACTIVE} board=${BOARD} shield=${SHIELD}")
+
+if(RGB_MATRIX_ACTIVE)
 
 zephyr_include_directories(src/rgb_matrix)
 zephyr_include_directories(src/rgb_matrix/animations)
@@ -14,21 +35,11 @@ zephyr_include_directories(src/rgb_matrix/animations/runners)
 # 确保 <zmk/...> 头文件可被 qmk_compat.h 等引用
 zephyr_include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# ================================================================
-# 注入键盘仓 keymap.c（定义 g_led_config 与 indicators）
-# 使用 GLOB_RECURSE 覆盖两种路径结构：
-#   - silicon65: config/boards/shields/silicon65/silicon65.keymap.c
-#   - TL96:      config/tl96.keymap.c
-# 通过 zephyr_sources() 编译进 zephyr 目标，保证在 shield/board 两种
-# 构建下都可靠执行（键盘仓自己的 target_sources(app) 对 shield 构建不生效）。
-# 将 ZMK_CONFIG 加入 include 路径，供 keymap.c 使用。
-# ================================================================
-file(GLOB_RECURSE RGB_MATRIX_KEYMAP_SOURCES "${ZMK_CONFIG}/*.keymap.c")
-if(RGB_MATRIX_KEYMAP_SOURCES)
-    zephyr_sources(${RGB_MATRIX_KEYMAP_SOURCES})
-    message(STATUS "rgb_matrix: injected keymap.c sources: ${RGB_MATRIX_KEYMAP_SOURCES}")
-endif()
+# keymap.c（定义 g_led_config 与 indicators）编译进 zephyr 目标。
+# 通过 zephyr_sources() 保证在 shield/board 两种构建下都可靠执行。
 zephyr_include_directories(${ZMK_CONFIG})
+zephyr_sources(${RGB_MATRIX_KEYMAP_SOURCES})
+message(STATUS "rgb_matrix: injected keymap.c sources: ${RGB_MATRIX_KEYMAP_SOURCES}")
 
 zephyr_sources(
     src/rgb_matrix/rgb_matrix.c
@@ -153,3 +164,5 @@ file(WRITE "${RGB_MATRIX_GEN_DIR}/rgb_matrix_mode_select.h"
 zephyr_include_directories(${RGB_MATRIX_GEN_DIR})
 
 message(STATUS "rgb_matrix: generated config at ${RGB_MATRIX_GEN_DIR}/rgb_matrix_generated_config.h")
+
+endif() # RGB_MATRIX_ACTIVE

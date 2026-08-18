@@ -1,3 +1,6 @@
+# Copyright (c) 2026 bvbhu
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
 # RGB Matrix 模块 CMakeLists.txt
 #
 # 模块源码、配置头文件生成、keymap.c 注入全部只在"当前构建确实是使用本模块的
@@ -45,7 +48,7 @@ zephyr_sources(
     src/rgb_matrix/rgb_matrix.c
     src/rgb_matrix/rgb_matrix_behavior.c
     src/rgb_matrix/qmk_compat.c
-    src/rgb_matrix/lib8tion.c
+    src/rgb_matrix/utils.c
 )
 
 # ================================================================
@@ -76,6 +79,7 @@ string(APPEND RGB_MATRIX_GEN_H "#endif\n")
 string(APPEND RGB_MATRIX_GEN_H "/* ===== Rendering parameters ===== */\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_CENTER { CONFIG_RGB_MATRIX_CENTER_X, CONFIG_RGB_MATRIX_CENTER_Y }\n")
 string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_LED_FLUSH_LIMIT CONFIG_RGB_MATRIX_LED_FLUSH_LIMIT\n")
+string(APPEND RGB_MATRIX_GEN_H "#define RGB_MATRIX_LED_PROCESS_LIMIT CONFIG_RGB_MATRIX_LED_PROCESS_LIMIT\n")
 
 # RGB_WORKQ_STACK_SIZE 从 autoconf.h 直接读取。
 # 若用户设 CONFIG_RGB_WORKQ_STACK_SIZE=0，编译时 RGB_WORKQ_STACK_SIZE > 0 为假，系统 workqueue 生效。

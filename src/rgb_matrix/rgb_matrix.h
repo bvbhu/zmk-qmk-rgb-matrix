@@ -25,9 +25,6 @@ extern "C" {
 
 #include "rgb_matrix_types.h"
 
-#define RGB_MATRIX_LED_PROCESS_LIMIT RGB_MATRIX_LED_COUNT
-
-
 struct rgb_matrix_limits_t {
     uint8_t led_min_index;
     uint8_t led_max_index;

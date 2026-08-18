@@ -1,10 +1,20 @@
 /*
  * Copyright (c) 2026 bvbhu
- * SPDX-License-Identifier: MIT
  *
- * qmk_compat.c — QMK API 兼容实现
- * 为 keymap.c 等 ZMK 上层代码提供 QMK 风格的函数。
- * 时间相关基于 Zephyr k_uptime_get_32。
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+
  */
 
 #include "qmk_compat.h"
@@ -48,34 +58,4 @@ led_t host_keyboard_led_state(void)
 uint8_t get_mods(void)
 {
 	return (uint8_t)zmk_hid_get_explicit_mods();
-}
-
-uint16_t timer_read(void)
-{
-	return (uint16_t)k_uptime_get_32();
-}
-
-uint16_t timer_elapsed(uint16_t last)
-{
-	return (uint16_t)(k_uptime_get_32() - last);
-}
-
-uint16_t timer_read_fast(void)
-{
-	return (uint16_t)k_uptime_get_32();
-}
-
-uint16_t timer_elapsed_fast(uint16_t last)
-{
-	return (uint16_t)(k_uptime_get_32() - last);
-}
-
-uint32_t sync_timer_read32(void)
-{
-	return k_uptime_get_32();
-}
-
-uint32_t sync_timer_elapsed32(uint32_t last)
-{
-	return k_uptime_get_32() - last;
 }

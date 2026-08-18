@@ -29,6 +29,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 
+#define PACKED __attribute__((packed))
 #define STATIC_ASSERT _Static_assert
 
 #if defined(RGB_MATRIX_KEYPRESSES) || defined(RGB_MATRIX_KEYRELEASES)
@@ -95,3 +96,20 @@ typedef union rgb_config_t {
 } rgb_config_t;
 
 STATIC_ASSERT(sizeof(rgb_config_t) == sizeof(uint64_t), "RGB Matrix EECONFIG out of spec.");
+
+/* RGB 颜色（0-255 各通道） */
+typedef struct PACKED rgb_t {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} rgb_t;
+typedef rgb_t RGB;
+typedef rgb_t rgb_led_t;
+
+/* HSV 颜色（全部 0-255，包括 hue） */
+typedef struct PACKED hsv_t {
+    uint8_t h;
+    uint8_t s;
+    uint8_t v;
+} hsv_t;
+typedef hsv_t HSV;

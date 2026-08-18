@@ -4,7 +4,7 @@
 >
 > 本项目由 AI 生成，仍处于开发测试阶段，**不保证可用性**，请自行验证是否可用。
 
-QMK 风格的 RGB Matrix 灯效系统，移植自 QMK，适配 ZMK。支持全部 QMK RGB Matrix 灯效（含 Key Reactive 与 Framebuffer 灯效）。
+在ZMK 键盘使用 QMK 的 RGB Matrix 灯效系统，基于 QMK RGB Matrix 源码，适配 ZMK。支持全部 QMK RGB Matrix 灯效。
 
 ## 核心特性
 
@@ -33,7 +33,7 @@ zmk-qmk-rgb-matrix/
     ├── rgb_matrix_types.h       # 类型定义（led_config_t 等）
     ├── qmk_compat.c/.h          # QMK API 兼容层
     ├── post_config.h            # Key Reactive / Framebuffer 宏 + position→(row,col) 映射
-    └── lib8tion.c/.h            # FastLED 数学运算
+    └── utils.c/.h               # 数学工具函数
     └── animations/              # 灯效实现
         ├── rgb_matrix_effects.inc
         ├── *_anim.h
@@ -52,7 +52,7 @@ snippets/
 | **Kconfig → C 宏** | 模块 CMake 读取 Kconfig 值，自动生成 `rgb_matrix_generated_config.h` 注入编译 |
 | **LED 布局** | 键盘仓 `keymap.c` 提供 `g_led_config`（矩阵映射 + 物理坐标 + 标志位），每键盘独立定义 |
 | **灯效选择** | `CONFIG_RGB_MATRIX_EFFECT_<NAME>=y` 启用，自动展开为 `#define ENABLE_RGB_MATRIX_<NAME>` |
-| **键码控制** | 监听 ZMK `&rgb_ug` 行为键码，覆盖全部 15 个 RGB 命令，Shift 反向调节 |
+| **键码控制** | `rgb_matrix_behavior.c` 以行为驱动接管 `&rgb_ug`（与 ZMK 内置驱动同节点、互斥编译），覆盖全部 15 个 RGB 命令，Shift 反向调节 |
 | **持久化** | settings 子系统（NVS 后端）默认启用，`CONFIG_RGB_MATRIX_PERSISTENCE=n` 可整体裁剪 |
 | **HID 指示灯** | `CONFIG_ZMK_HID_INDICATORS` 默认启用，未启用时 `host_keyboard_led_state()` 不编译 |
 | **const 布局** | `CONFIG_RGB_LED_CONFIG_CONST=y` 时 `g_led_config` 声明为 const，节省 RAM |
@@ -98,12 +98,13 @@ led_config_t g_led_config = { /* 矩阵映射 / 物理坐标 / 标志位 */ };
 
 ## 许可证
 
-| 许可证 | 覆盖内容 |
-|--------|----------|
-| MIT | 集成/工具代码：settings、qmk_compat、lib8tion |
-| GPL-2.0-or-later | QMK 派生的 RGB Matrix 核心、灯效动画 |
+本模块全部文件使用同一许可证（逐文件归属见 [LICENSE](LICENSE)，以各文件头部的版权与 SPDX 声明为准）：
 
-GPL 文件链接进同一固件，**最终固件必须以 GPL-2.0-or-later 兼容条款分发**。
+| 许可证 | 覆盖文件 |
+|--------|----------|
+| GPL-2.0-or-later | 全部文件 — `rgb_matrix.c/.h`（QMK 核心移植）、`rgb_matrix_types.h`、`post_config.h`、`rgb_matrix_behavior.c`（行为驱动+持久化）、`qmk_compat.c/.h`（QMK API 兼容）、`utils.c/.h`（数学工具）、`animations/` 全部灯效与 runners（含 HorrorTroll、@filterpaper、@art-was-here 等第三方贡献）、构建脚本（CMakeLists/Kconfig/module.yml/west.yml/snippets） |
+
+**最终固件必须以 GPL-2.0-or-later 兼容条款分发**。
 
 ## 更多资料
 

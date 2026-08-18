@@ -182,7 +182,7 @@ SYNCING → STARTING → RENDERING → FLUSHING → SYNCING ...
 
 ### 键码与持久化
 
-`rgb_matrix_settings.c` 监听 `&rgb_ug` 键码（position 事件旁路），实现全部 15 个 RGB 命令。每次调节经 `RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE` 防抖后写入 Flash（settings 键 `rgb_matrix/state`，8 字节打包）。
+`rgb_matrix_behavior.c` 以 ZMK 行为驱动的方式接管 `&rgb_ug`：与 ZMK 内置 underglow 驱动共用同一设备树节点（`DT_DRV_COMPAT`），仅在 `CONFIG_ZMK_RGB_UNDERGLOW=n`（模块默认）时编译，若键盘仓显式设 `y` 会在编译期报错。`binding_pressed` 直接处理全部 15 个 RGB 命令并返回 OPAQUE 消费键码。每次调节经 `RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE` 防抖后写入 Flash（settings 键 `rgb_matrix/state`，8 字节打包）。
 
 持久化默认启用；`CONFIG_RGB_MATRIX_PERSISTENCE=n` 或显式 `CONFIG_SETTINGS=n` 时，持久化代码整体裁剪，每次开机用出厂默认值。
 
@@ -200,6 +200,9 @@ Key Reactive / 打字热力图需要 (row, col)。模块在编译期从设备树
 
 **Q3：RAM 不足 / 刷入后无法识别？**
 STM32F072（16 KB SRAM）等紧张 MCU 上：启用 `CONFIG_RGB_LED_CONFIG_CONST=y`；减少启用灯效；`CONFIG_RGB_WORKQ_STACK_SIZE=0` 复用系统 workqueue。Key Reactive 灯效常驻 ~82 B、Framebuffer 灯效常驻 ~96 B BSS。
+
+**Q3b：单帧渲染耗时过长 / CPU 占用高（低端 MCU）？**
+把 `CONFIG_RGB_MATRIX_LED_PROCESS_LIMIT` 调小（默认 `(LED_COUNT+4)/5`，QMK 同款算法；必须 `> 0`，建议 `16`/`24`/`32`）：把一帧的 LED 渲染拆成多帧完成，显著降低单帧 CPU 峰值，代价是完整画面刷新率变为 `1000 / (ceil(LED_COUNT / LIMIT) × FLUSH_LIMIT) ms`。例如 69 颗 LED + LIMIT=16 + FLUSH_LIMIT=16 → 约 12.5 完整 FPS。也可配合调大 `RGB_MATRIX_LED_FLUSH_LIMIT` 进一步节流。
 
 **Q4：有线/无线熄灯行为？**
 `CONFIG_ZMK_IDLE_TIMEOUT` 控制空闲熄灯；`CONFIG_RGB_MATRIX_KEEP_ON_WIRED=y` 时仅 USB 模式空闲不熄灯，无线仍超时熄灯。

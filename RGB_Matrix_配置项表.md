@@ -19,13 +19,13 @@
 
 > 以上子系统默认值均用 `default` 而非强制 `select` 实现：在键盘仓显式写 `CONFIG_SETTINGS=n` 等仍可关闭，此时模块相应功能（持久化）自动裁剪。
 
-## 2. 矩阵与 LED（必填）
+## 2. 矩阵与 LED（必填，未配置会触发 `#error`）
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `RGB_MATRIX_ROWS` | int | – | **必填**，矩阵行数 |
-| `RGB_MATRIX_COLS` | int | – | **必填**，矩阵列数 |
-| `RGB_MATRIX_LED_COUNT` | int | – | **必填**，灯珠总数 |
+| 配置项 | 类型 |  说明 |
+|--------|------|------|
+| `RGB_MATRIX_ROWS` | int | 矩阵行数 |
+| `RGB_MATRIX_COLS` | int | 矩阵列数 |
+| `RGB_MATRIX_LED_COUNT` | int | 灯珠数量 |
 
 ## 3. 渲染参数
 
@@ -34,7 +34,8 @@
 | `RGB_MATRIX_CENTER_X` | int | `108` | 0~255 | 对称/波浪类灯效中心 X |
 | `RGB_MATRIX_CENTER_Y` | int | `32` | 0~255 | 对称/波浪类灯效中心 Y |
 | `RGB_MATRIX_LED_FLUSH_LIMIT` | int | `16` | 1~100 | LED 刷新间隔（ms），即灯效帧率节流 |
-| `RGB_WORKQ_STACK_SIZE` | int | `2048` | 0~4096 | 独立渲染 workqueue 栈（字节）；`0` = 复用系统 workqueue（省 RAM） |
+| `RGB_MATRIX_LED_PROCESS_LIMIT` | int | `(LED_COUNT+4)/5` | 1~255 | 每帧最多处理的 LED 数（分帧渲染），必须 `> 0`； |
+| `RGB_WORKQ_STACK_SIZE` | int | `2048` | 建议512~2048或0 | 独立渲染 workqueue 栈（字节）；`0` = 复用系统 workqueue（省 RAM） |
 
 > `CENTER` 参考计算：`x = 255 * 物理列号 / (总列数 - 1)`，`y = 255 * 物理行号 / (总行数 - 1)`。
 
@@ -51,14 +52,14 @@
 
 | 配置项 | 类型 | 默认值 | 范围 | 说明 |
 |--------|------|--------|------|------|
-| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | int | `225` | 1~255 | 最大亮度上限（调节时被 clamp） |
-| `RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE` | int | 跟随 `ZMK_SETTINGS_SAVE_DEBOUNCE` | – | 持久化防抖（ms）：正 = 尾缘防抖；`0` = 立即写；负 = 不写 Flash |
-| `RGB_MATRIX_DEFAULT_HUE` | int | `170` | 0~255 | 出厂默认色相 |
-| `RGB_MATRIX_DEFAULT_SAT` | int | `255` | 0~255 | 出厂默认饱和度 |
-| `RGB_MATRIX_DEFAULT_VAL` | int | `200` | 0~255 | 出厂默认亮度 |
-| `RGB_MATRIX_DEFAULT_SPD` | int | `127` | 0~255 | 出厂默认速度 |
+| `RGB_MATRIX_MAXIMUM_BRIGHTNESS` | int | `225` | 1~255 | 最大亮度上限 |
+| `RGB_MATRIX_SETTINGS_SAVE_DEBOUNCE` | int | 跟随 `ZMK_SETTINGS_SAVE_DEBOUNCE` | – | 灯效设置保存延迟（ms）：负值则不写入Flash |
+| `RGB_MATRIX_DEFAULT_HUE` | int | `170` | 0~255 | 默认色相 |
+| `RGB_MATRIX_DEFAULT_SAT` | int | `255` | 0~255 | 默认饱和度 |
+| `RGB_MATRIX_DEFAULT_VAL` | int | `200` | 0~255 | 默认亮度 |
+| `RGB_MATRIX_DEFAULT_SPD` | int | `127` | 0~255 | 默认速度 |
 | `RGB_MATRIX_DEFAULT_ON` | bool | `y` | – | 开机默认开启 RGB |
-| `RGB_MATRIX_DEFAULT_MODE` | string | `"CYCLE_LEFT_RIGHT"` | – | 出厂默认灯效名（不含 `RGB_MATRIX_` 前缀，须已启用） |
+| `RGB_MATRIX_DEFAULT_MODE` | string | `"CYCLE_LEFT_RIGHT"` | – | 默认灯效名（不含 `RGB_MATRIX_` 前缀，须已启用） |
 | `RGB_MATRIX_KEEP_ON_WIRED` | bool | `n` | – | 有线（USB）模式空闲不熄灯；无线仍遵循 `ZMK_IDLE_TIMEOUT` |
 | `RGB_LED_CONFIG_CONST` | bool | `n` | – | `g_led_config` 声明为 const 存 Flash（省 RAM）；keymap.c 需同步 const |
 | `RGB_MATRIX_IS_LEFT` | bool | `n` | – | 强制 `is_keyboard_left()` 为 true；默认遵循 ZMK split（central = 左半） |

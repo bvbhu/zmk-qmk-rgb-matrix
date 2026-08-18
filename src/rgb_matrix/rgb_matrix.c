@@ -19,7 +19,7 @@
 
 #include "rgb_matrix.h"
 #include "rgb_matrix_mode_select.h"
-#include "lib8tion.h"
+#include "utils.h"
 
 #include <dt-bindings/zmk/rgb.h>
 #undef RC
@@ -47,42 +47,8 @@ const led_point_t k_rgb_matrix_center = {112, 32};
 const led_point_t k_rgb_matrix_center = RGB_MATRIX_CENTER;
 #endif
 
-rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv) {
-    rgb_t    rgb;
-    uint16_t h = hsv.h, s = hsv.s, v = hsv.v;
-    if (hsv.s == 0) {
-        rgb.r = v, rgb.g = v, rgb.b = v;
-        return rgb;
-    }
-
-    uint8_t region    = (uint8_t)(h * 6 / 255);
-    uint8_t remainder = (uint8_t)((h * 2 - region * 85) * 3);
-    uint8_t p         = (uint8_t)((v * (255 - s)) >> 8);
-    uint8_t q         = (uint8_t)((v * (255 - ((s * remainder) >> 8))) >> 8);
-    uint8_t t         = (uint8_t)((v * (255 - ((s * (255 - remainder)) >> 8))) >> 8);
-
-    switch (region) {
-        case 6:
-        case 0:
-            rgb.r = (uint8_t)v, rgb.g = t, rgb.b = p;
-            break;
-        case 1:
-            rgb.r = q, rgb.g = (uint8_t)v, rgb.b = p;
-            break;
-        case 2:
-            rgb.r = p, rgb.g = (uint8_t)v, rgb.b = t;
-            break;
-        case 3:
-            rgb.r = p, rgb.g = q, rgb.b = (uint8_t)v;
-            break;
-        case 4:
-            rgb.r = t, rgb.g = p, rgb.b = (uint8_t)v;
-            break;
-        default:
-            rgb.r = (uint8_t)v, rgb.g = p, rgb.b = q;
-            break;
-    }
-    return rgb;
+__attribute__((weak)) rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv) {
+    return hsv_to_rgb(hsv);
 }
 // Generic effect runners
 #include "rgb_matrix_runners.inc"
@@ -197,12 +163,16 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
         led_count = rgb_matrix_map_row_column_to_led(row, col, led);
     }
 
+    if (led_count > LED_HITS_TO_REMEMBER) led_count = LED_HITS_TO_REMEMBER;
+
     if (last_hit_buffer.count + led_count > LED_HITS_TO_REMEMBER) {
-        memcpy(&last_hit_buffer.x[0], &last_hit_buffer.x[led_count], LED_HITS_TO_REMEMBER - led_count);
-        memcpy(&last_hit_buffer.y[0], &last_hit_buffer.y[led_count], LED_HITS_TO_REMEMBER - led_count);
-        memcpy(&last_hit_buffer.tick[0], &last_hit_buffer.tick[led_count], (LED_HITS_TO_REMEMBER - led_count) * 2); // 16 bit
-        memcpy(&last_hit_buffer.index[0], &last_hit_buffer.index[led_count], LED_HITS_TO_REMEMBER - led_count);
-        last_hit_buffer.count = LED_HITS_TO_REMEMBER - led_count;
+        uint8_t drop = last_hit_buffer.count + led_count - LED_HITS_TO_REMEMBER;
+        uint8_t keep = last_hit_buffer.count - drop;
+        memmove(&last_hit_buffer.x[0], &last_hit_buffer.x[drop], keep);
+        memmove(&last_hit_buffer.y[0], &last_hit_buffer.y[drop], keep);
+        memmove(&last_hit_buffer.tick[0], &last_hit_buffer.tick[drop], keep * 2); // 16 bit
+        memmove(&last_hit_buffer.index[0], &last_hit_buffer.index[drop], keep);
+        last_hit_buffer.count = keep;
     }
 
     for (uint8_t i = 0; i < led_count; i++) {
@@ -271,12 +241,23 @@ static void rgb_task_timers(void) {
     // Update double buffer last hit timers
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
     uint8_t count = last_hit_buffer.count;
-    for (uint8_t i = 0; i < count; ++i) {
+    for (uint8_t i = 0; i < count;) {
         if (UINT16_MAX - deltaTime < last_hit_buffer.tick[i]) {
-            last_hit_buffer.count--;
-            continue;
+            // Entry expired: shift remaining entries down, decrement count
+            count--;
+            last_hit_buffer.count = count;
+            uint8_t tail = count - i;
+            if (tail > 0) {
+                memmove(&last_hit_buffer.x[i], &last_hit_buffer.x[i + 1], tail);
+                memmove(&last_hit_buffer.y[i], &last_hit_buffer.y[i + 1], tail);
+                memmove(&last_hit_buffer.tick[i], &last_hit_buffer.tick[i + 1], tail * 2);
+                memmove(&last_hit_buffer.index[i], &last_hit_buffer.index[i + 1], tail);
+            }
+            // Don't increment i; the entry shifted into i needs checking
+        } else {
+            last_hit_buffer.tick[i] += deltaTime;
+            i++;
         }
-        last_hit_buffer.tick[i] += deltaTime;
     }
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 }
@@ -430,15 +411,34 @@ __attribute__((weak)) bool rgb_matrix_indicators_user(void) {
 
 struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter) {
     struct rgb_matrix_limits_t limits = {0};
+
+    // 当前侧（split）的 LED 范围
+    uint8_t side_min = 0;
+    uint8_t side_max = RGB_MATRIX_LED_COUNT;
 #if defined(RGB_MATRIX_SPLIT)
-    limits.led_min_index = 0;
-    limits.led_max_index = RGB_MATRIX_LED_COUNT;
-    if (is_keyboard_left() && (limits.led_max_index > k_rgb_matrix_split[0])) limits.led_max_index = k_rgb_matrix_split[0];
-    if (!(is_keyboard_left()) && (limits.led_min_index < k_rgb_matrix_split[0])) limits.led_min_index = k_rgb_matrix_split[0];
-#else
-    limits.led_min_index = 0;
-    limits.led_max_index = RGB_MATRIX_LED_COUNT;
+    if (is_keyboard_left() && (side_max > k_rgb_matrix_split[0])) side_max = k_rgb_matrix_split[0];
+    if (!(is_keyboard_left()) && (side_min < k_rgb_matrix_split[0])) side_min = k_rgb_matrix_split[0];
 #endif
+
+    uint16_t process_limit = RGB_MATRIX_LED_PROCESS_LIMIT;
+    uint16_t side_count    = side_max - side_min;
+    if (process_limit == 0 /* 防御：Kconfig range 1~255 保证 > 0 */ || process_limit >= side_count) {
+        // LED 数不超过单帧处理上限：一帧处理全部
+        limits.led_min_index = side_min;
+        limits.led_max_index = side_max;
+    } else {
+        // 按 iter 切块：每帧最多处理 process_limit 个 LED
+        uint16_t start = (uint16_t)side_min + (uint16_t)iter * process_limit;
+        if (start >= side_max) {
+            // 已越过末尾：空块，check_finished_leds 会判定渲染完成
+            limits.led_min_index = side_max;
+            limits.led_max_index = side_max;
+        } else {
+            limits.led_min_index = (uint8_t)start;
+            limits.led_max_index = (uint8_t)(start + process_limit);
+            if (limits.led_max_index > side_max) limits.led_max_index = side_max;
+        }
+    }
     return limits;
 }
 
@@ -479,6 +479,12 @@ void rgb_matrix_init(void) {
 /* ===== 定时调度：条件选择系统 workqueue 或独立 workqueue ===== */
 /* 在 config.h 中定义 RGB_WORKQ_STACK_SIZE > 0 启用独立 workqueue。 */
 
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+#    define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
+static struct k_work_q rgb_work_q;
+K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
+#endif
+
 /* rgb_tick_handler - periodic rgb_matrix_task dispatch */
 static void rgb_tick_handler(struct k_work *work) {
     (void)work;
@@ -486,12 +492,6 @@ static void rgb_tick_handler(struct k_work *work) {
 }
 
 K_WORK_DEFINE(rgb_tick_work, rgb_tick_handler);
-
-#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-#    define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
-static struct k_work_q rgb_work_q;
-K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
-#endif
 
 static void rgb_timer_handler(struct k_timer *timer) {
     (void)timer;

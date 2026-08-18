@@ -31,6 +31,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
+#include <drivers/behavior.h>
 #include <dt-bindings/zmk/rgb.h>
 #include <zmk/behavior.h>
 #include <zmk/event_manager.h>

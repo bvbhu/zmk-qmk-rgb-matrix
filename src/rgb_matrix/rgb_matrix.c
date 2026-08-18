@@ -113,7 +113,9 @@ last_hit_t g_last_hit_tracker;
 static uint8_t         rgb_last_enable    = UINT8_MAX;
 static uint8_t         rgb_last_effect    = UINT8_MAX;
 static effect_params_t rgb_effect_params  = {0, LED_FLAG_ALL, false};
-static rgb_task_states rgb_task_state     = SYNCING;
+/* rgb_task_state 跨文件共享（rgb_matrix_behavior.c 的 binding_pressed 写 STARTING），
+ * 不能为 static，需与 rgb_matrix.h 的 extern 声明一致。 */
+rgb_task_states        rgb_task_state     = SYNCING;
 
 // double buffers
 static uint32_t rgb_timer_buffer;

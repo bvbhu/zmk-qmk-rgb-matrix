@@ -16,11 +16,14 @@
  *
  * rgb_matrix_behavior.h — rgb_matrix_behavior.c 的私有头文件
  *
- * 为 Key Reactive / Framebuffer 灯效提供 position → (row, col) 编译期映射表：
+ * 为 Key Reactive / Framebuffer 灯效提供 position → (row, col) 映射：
  *   RGB_MATRIX_POS_TO_RC_LEN  — 映射表长度（= zmk_matrix_transform map 长度）
- *   RGB_MATRIX_POS_TO_RC_MAP  — 映射表初始化器（{row, col} 数组）
+ *   rgb_matrix_pos_to_rc_init() — 运行时初始化映射表
  *
- * 仅当对应灯效启用且存在 zmk_matrix_transform 节点时才定义这两个宏；
+ * Zephyr LISTIFY 宏最多支持 91 个元素，而 96 键/全尺寸键盘的矩阵变换
+ * 常超过此限制，因此改用运行时初始化（逐个读取 devicetree 属性）。
+ *
+ * 仅当对应灯效启用且存在 zmk_matrix_transform 节点时才定义 LEN 宏；
  * rgb_matrix_behavior.c 以 #if defined(RGB_MATRIX_POS_TO_RC_LEN) 决定
  * 是否编译按键事件监听器，因此本头文件是"是否启用监听"的唯一门控。
  */
@@ -53,14 +56,9 @@
 #	if DT_HAS_CHOSEN(zmk_matrix_transform)
 #		define ZMK_RGB_MT_NODE DT_CHOSEN(zmk_matrix_transform)
 #		define ZMK_RGB_MT_LEN DT_PROP_LEN(ZMK_RGB_MT_NODE, map)
-#		define ZMK_RGB_POS_RC_ENTRY(idx, _)                              \
-			{ (uint8_t)KT_ROW(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, idx)), \
-			  (uint8_t)KT_COL(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, idx)) }
 #		define RGB_MATRIX_POS_TO_RC_LEN ZMK_RGB_MT_LEN
-#		define RGB_MATRIX_POS_TO_RC_MAP \
-			{ LISTIFY(ZMK_RGB_MT_LEN, ZMK_RGB_POS_RC_ENTRY, (, ), 0) }
-/* ZMK_RGB_POS_RC_ENTRY 是 LISTIFY 内部宏，用完即弃 */
-#		undef ZMK_RGB_POS_RC_ENTRY
+/* 运行时初始化函数声明（在 rgb_matrix_behavior.c 中实现） */
+void rgb_matrix_pos_to_rc_init(void);
 #	endif /* DT_HAS_CHOSEN(zmk_matrix_transform) */
 
 /* 恢复 RC 原始定义（modifiers.h 的 RC(keycode)） */

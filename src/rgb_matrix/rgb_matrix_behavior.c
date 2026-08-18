@@ -351,7 +351,15 @@ static const struct behavior_driver_api rgb_ug_driver_api = {
 /* ===== 设备注册 =====
  * 与 ZMK 内置 underglow 驱动使用相同的 DT_DRV_COMPAT 和 rgb_ug 节点。
  * 内置驱动不编译时本驱动接管，内置驱动编译时本文件因 #if IS_ENABLED 报错。 */
-BEHAVIOR_DT_DEFINE(DT_NODELABEL(rgb_ug), NULL, NULL, NULL, NULL, POST_KERNEL,
+static int rgb_ug_init(const struct device* dev)
+{
+	(void)dev;
+#if defined(RGB_MATRIX_POS_TO_RC_LEN)
+	rgb_matrix_pos_to_rc_init();
+#endif
+	return 0;
+}
+BEHAVIOR_DT_DEFINE(DT_NODELABEL(rgb_ug), rgb_ug_init, NULL, NULL, NULL, POST_KERNEL,
 				   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rgb_ug_driver_api);
 
 /* ================================================================
@@ -363,11 +371,23 @@ BEHAVIOR_DT_DEFINE(DT_NODELABEL(rgb_ug), NULL, NULL, NULL, NULL, POST_KERNEL,
  * 裁剪；监听器不捕获事件 (返回 BUBBLE)，仅旁路记录命中点。 */
 #if defined(RGB_MATRIX_POS_TO_RC_LEN)
 
-static const struct
+/* 运行时初始化的 position → (row, col) 映射表。
+ * 不使用 LISTIFY 编译期初始化，因为 Zephyr LISTIFY 最多支持 91 个元素，
+ * 而 96 键/全尺寸键盘的矩阵变换常超过此限制。 */
+static struct
 {
 	uint8_t row;
 	uint8_t col;
-} zmk_rgb_pos_to_rc[RGB_MATRIX_POS_TO_RC_LEN] = RGB_MATRIX_POS_TO_RC_MAP;
+} zmk_rgb_pos_to_rc[RGB_MATRIX_POS_TO_RC_LEN];
+
+void rgb_matrix_pos_to_rc_init(void)
+{
+	for(int i = 0; i < RGB_MATRIX_POS_TO_RC_LEN; i++)
+	{
+		zmk_rgb_pos_to_rc[i].row = (uint8_t)KT_ROW(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, i));
+		zmk_rgb_pos_to_rc[i].col = (uint8_t)KT_COL(DT_PROP_BY_IDX(ZMK_RGB_MT_NODE, map, i));
+	}
+}
 
 static int rgb_matrix_key_event_listener(const zmk_event_t* eh)
 {

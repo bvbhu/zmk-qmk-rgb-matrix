@@ -24,9 +24,6 @@
 #include <dt-bindings/zmk/rgb.h>
 #undef RC
 #include <dt-bindings/zmk/matrix_transform.h>
-#include <zephyr/device.h>
-#include <zephyr/devicetree.h>
-#include <zephyr/drivers/led_strip.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -34,12 +31,6 @@
 #include <zmk/usb.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
-
-/* LED strip pixel buffer & device (使用 ZMK led_strip API)
- * 显式零初始化为全黑（熄灭），与 QMK 驱动缓冲区初始状态一致。
- * 该缓冲区跨帧保留数据，raindrops 等灯效依赖此行为。 */
-static struct led_rgb       led_strip_pixels[RGB_MATRIX_LED_COUNT] = {0};
-static const struct device *led_strip_dev;
 
 #ifndef RGB_MATRIX_CENTER
 const led_point_t k_rgb_matrix_center = {112, 32};
@@ -50,6 +41,7 @@ const led_point_t k_rgb_matrix_center = RGB_MATRIX_CENTER;
 __attribute__((weak)) rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv) {
     return hsv_to_rgb(hsv);
 }
+
 // Generic effect runners
 #include "rgb_matrix_runners.inc"
 
@@ -127,9 +119,7 @@ void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
         return;
     }
 
-    led_strip_pixels[led_index].r = red;
-    led_strip_pixels[led_index].g = green;
-    led_strip_pixels[led_index].b = blue;
+    rgb_matrix_driver.set_color(led_index, red, green, blue);
 }
 
 void rgb_matrix_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
@@ -137,11 +127,7 @@ void rgb_matrix_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
     for (uint8_t i = 0; i < RGB_MATRIX_LED_COUNT; i++)
         rgb_matrix_set_color(i, red, green, blue);
 #else
-    for (uint8_t i = 0; i < RGB_MATRIX_LED_COUNT; i++) {
-        led_strip_pixels[i].r = red;
-        led_strip_pixels[i].g = green;
-        led_strip_pixels[i].b = blue;
-    }
+    rgb_matrix_driver.set_color_all(red, green, blue);
 #endif
 }
 
@@ -334,7 +320,7 @@ static void rgb_task_flush(uint8_t effect) {
     rgb_last_enable = rgb_matrix_config.enable;
 
     // update pwm buffers
-    if (led_strip_dev) led_strip_update_rgb(led_strip_dev, led_strip_pixels, RGB_MATRIX_LED_COUNT);
+    rgb_matrix_driver.flush();
 
     // next task
     rgb_task_state = SYNCING;
@@ -457,11 +443,7 @@ __attribute__((weak)) bool rgb_matrix_indicators_advanced_user(uint8_t led_min, 
 }
 
 void rgb_matrix_init(void) {
-    led_strip_dev = DEVICE_DT_GET(DT_CHOSEN(zmk_underglow));
-    if (!device_is_ready(led_strip_dev)) {
-        LOG_ERR("LED strip device not ready");
-        led_strip_dev = NULL;
-    }
+    rgb_matrix_driver.init();
 
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
     g_last_hit_tracker.count = 0;
@@ -503,6 +485,130 @@ static void rgb_timer_handler(struct k_timer *timer) {
 }
 
 K_TIMER_DEFINE(rgb_timer, rgb_timer_handler, NULL);
+
+/* ================================================================
+ * QMK 风格控制 API（函数名与 QMK rgb_matrix.c 一致，不带 _noeeprom）
+ * ================================================================
+ * 持久化通过 rgb_matrix_settings_save()（Zephyr settings 防抖保存），
+ * 而非 QMK eeconfig。由 rgb_matrix_behavior.c 的 binding_pressed 调用。
+ * 实现逻辑参考 QMK rgb_matrix.c:529-756。 */
+
+void rgb_matrix_toggle(void) {
+    rgb_matrix_config.enable ^= 1;
+    rgb_task_state = STARTING;
+    rgb_matrix_settings_save();
+}
+
+void rgb_matrix_enable(void) {
+    if (!rgb_matrix_config.enable) rgb_task_state = STARTING;
+    rgb_matrix_config.enable = 1;
+    rgb_matrix_settings_save();
+}
+
+void rgb_matrix_disable(void) {
+    if (rgb_matrix_config.enable) rgb_task_state = STARTING;
+    rgb_matrix_config.enable = 0;
+    rgb_matrix_settings_save();
+}
+
+uint8_t rgb_matrix_is_enabled(void) {
+    return rgb_matrix_config.enable;
+}
+
+void rgb_matrix_mode(uint8_t mode) {
+    if (!rgb_matrix_config.enable) {
+        return;
+    }
+    if (mode < 1) {
+        mode = 1;
+    } else if (mode >= RGB_MATRIX_EFFECT_MAX) {
+        mode = RGB_MATRIX_EFFECT_MAX - 1;
+    }
+    rgb_matrix_config.mode = mode;
+    rgb_task_state = STARTING;
+    rgb_matrix_settings_save();
+}
+
+uint8_t rgb_matrix_get_mode(void) {
+    return rgb_matrix_config.mode;
+}
+
+void rgb_matrix_step(void) {
+    uint8_t mode = rgb_matrix_config.mode + 1;
+    rgb_matrix_mode((mode < RGB_MATRIX_EFFECT_MAX) ? mode : 1);
+}
+
+void rgb_matrix_step_reverse(void) {
+    uint8_t mode = rgb_matrix_config.mode - 1;
+    rgb_matrix_mode((mode < 1) ? RGB_MATRIX_EFFECT_MAX - 1 : mode);
+}
+
+void rgb_matrix_sethsv(uint16_t hue, uint8_t sat, uint8_t val) {
+    if (!rgb_matrix_config.enable) {
+        return;
+    }
+    rgb_matrix_config.hsv.h = (uint8_t)hue;
+    rgb_matrix_config.hsv.s = sat;
+    rgb_matrix_config.hsv.v = (val > RGB_MATRIX_MAXIMUM_BRIGHTNESS) ? RGB_MATRIX_MAXIMUM_BRIGHTNESS : val;
+    rgb_matrix_settings_save();
+}
+
+hsv_t rgb_matrix_get_hsv(void) {
+    return rgb_matrix_config.hsv;
+}
+
+uint8_t rgb_matrix_get_hue(void) {
+    return rgb_matrix_config.hsv.h;
+}
+
+uint8_t rgb_matrix_get_sat(void) {
+    return rgb_matrix_config.hsv.s;
+}
+
+uint8_t rgb_matrix_get_val(void) {
+    return rgb_matrix_config.hsv.v;
+}
+
+void rgb_matrix_increase_hue(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h + RGB_MATRIX_HUE_STEP, rgb_matrix_config.hsv.s, rgb_matrix_config.hsv.v);
+}
+
+void rgb_matrix_decrease_hue(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h - RGB_MATRIX_HUE_STEP, rgb_matrix_config.hsv.s, rgb_matrix_config.hsv.v);
+}
+
+void rgb_matrix_increase_sat(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h, qadd8(rgb_matrix_config.hsv.s, RGB_MATRIX_SAT_STEP), rgb_matrix_config.hsv.v);
+}
+
+void rgb_matrix_decrease_sat(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h, qsub8(rgb_matrix_config.hsv.s, RGB_MATRIX_SAT_STEP), rgb_matrix_config.hsv.v);
+}
+
+void rgb_matrix_increase_val(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h, rgb_matrix_config.hsv.s, qadd8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP));
+}
+
+void rgb_matrix_decrease_val(void) {
+    rgb_matrix_sethsv(rgb_matrix_config.hsv.h, rgb_matrix_config.hsv.s, qsub8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP));
+}
+
+void rgb_matrix_set_speed(uint8_t speed) {
+    rgb_matrix_config.speed = speed;
+    rgb_matrix_settings_save();
+}
+
+uint8_t rgb_matrix_get_speed(void) {
+    return rgb_matrix_config.speed;
+}
+
+void rgb_matrix_increase_speed(void) {
+    rgb_matrix_set_speed(qadd8(rgb_matrix_config.speed, RGB_MATRIX_SPD_STEP));
+}
+
+void rgb_matrix_decrease_speed(void) {
+    rgb_matrix_set_speed(qsub8(rgb_matrix_config.speed, RGB_MATRIX_SPD_STEP));
+}
 
 /* Initialize rgb_matrix + start periodic timer */
 int rgb_matrix_controller_init(void) {

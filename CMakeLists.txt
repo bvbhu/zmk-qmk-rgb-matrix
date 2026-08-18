@@ -47,6 +47,7 @@ message(STATUS "rgb_matrix: injected keymap.c sources: ${RGB_MATRIX_KEYMAP_SOURC
 zephyr_sources(
     src/rgb_matrix/rgb_matrix.c
     src/rgb_matrix/rgb_matrix_behavior.c
+    src/rgb_matrix/rgb_matrix_driver.c
     src/rgb_matrix/qmk_compat.c
     src/rgb_matrix/utils.c
 )

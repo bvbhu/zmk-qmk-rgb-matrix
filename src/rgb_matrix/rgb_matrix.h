@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 #include "rgb_matrix_types.h"
+#include "rgb_matrix_driver.h"
 
 struct rgb_matrix_limits_t {
     uint8_t led_min_index;
@@ -132,9 +133,33 @@ extern rgb_task_states rgb_task_state;
 rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv);
 int rgb_matrix_controller_init(void);
 
-/* ===== 设置持久化 API（由 rgb_matrix_behavior.c 提供）===== */
-void rgb_matrix_settings_init(void);
-void rgb_matrix_settings_save(void);
+/* ===== QMK 风格控制 API（在 rgb_matrix.c 中实现）=====
+ * 函数名与 QMK rgb_matrix.c 一致（不带 _noeeprom 变体），
+ * 持久化通过 rgb_matrix_settings_save()（Zephyr settings 防抖保存）
+ * 而非 QMK eeconfig。由 rgb_matrix_behavior.c 的 binding_pressed 调用。 */
+void    rgb_matrix_toggle(void);
+void    rgb_matrix_enable(void);
+void    rgb_matrix_disable(void);
+uint8_t rgb_matrix_is_enabled(void);
+void    rgb_matrix_mode(uint8_t mode);
+uint8_t rgb_matrix_get_mode(void);
+void    rgb_matrix_step(void);
+void    rgb_matrix_step_reverse(void);
+void    rgb_matrix_sethsv(uint16_t hue, uint8_t sat, uint8_t val);
+hsv_t   rgb_matrix_get_hsv(void);
+uint8_t rgb_matrix_get_hue(void);
+uint8_t rgb_matrix_get_sat(void);
+uint8_t rgb_matrix_get_val(void);
+void    rgb_matrix_increase_hue(void);
+void    rgb_matrix_decrease_hue(void);
+void    rgb_matrix_increase_sat(void);
+void    rgb_matrix_decrease_sat(void);
+void    rgb_matrix_increase_val(void);
+void    rgb_matrix_decrease_val(void);
+void    rgb_matrix_set_speed(uint8_t speed);
+uint8_t rgb_matrix_get_speed(void);
+void    rgb_matrix_increase_speed(void);
+void    rgb_matrix_decrease_speed(void);
 
 /* ===== 键盘仓提供的符号（由键盘仓 keymap.c 定义）=====
  * 在键盘仓 config/keymap.c 中定义以下符号：

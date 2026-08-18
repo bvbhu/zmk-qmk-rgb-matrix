@@ -6,11 +6,11 @@
 
 manifest:
   remotes:
-    - name: mykeyboard
+    - name: bvbhu-zmk-qmk-rgb-matrix
       url-base: https://github.com/bvbhu
   projects:
     - name: zmk-qmk-rgb-matrix
-      remote: mykeyboard
+      remote: bvbhu-zmk-qmk-rgb-matrix
       revision: main
       path: modules/rgb-matrix
   self:

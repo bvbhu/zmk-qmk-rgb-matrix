@@ -37,21 +37,30 @@ menu "RGB Matrix Configuration"
 
 config RGB_MATRIX_ROWS
     int "Matrix rows"
+    default -1
     help
       Number of rows in the keyboard matrix.
-      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_ROWS=5.
+      MUST be overridden in keyboard .conf, e.g. CONFIG_RGB_MATRIX_ROWS=5.
+      Default -1 is a compile-time sentinel: if a keyboard forgets to set
+      this the generated header #error's out. Builds that don't use the
+      module (e.g. settings_reset) never include that header, so the value
+      is harmless.
 
 config RGB_MATRIX_COLS
     int "Matrix columns"
+    default -1
     help
       Number of columns in the keyboard matrix.
-      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_COLS=15.
+      MUST be overridden in keyboard .conf, e.g. CONFIG_RGB_MATRIX_COLS=15.
+      Same sentinel / compile-time-guard rationale as RGB_MATRIX_ROWS.
 
 config RGB_MATRIX_LED_COUNT
     int "LED count"
+    default -1
     help
       Total number of RGB LED pixels on the keyboard.
-      REQUIRED: must be set in keyboard .conf, e.g. CONFIG_RGB_MATRIX_LED_COUNT=69.
+      MUST be overridden in keyboard .conf, e.g. CONFIG_RGB_MATRIX_LED_COUNT=69.
+      Same sentinel / compile-time-guard rationale as RGB_MATRIX_ROWS.
 
 config RGB_MATRIX_CENTER_X
     int "LED center X coordinate (0-255)"

@@ -86,13 +86,13 @@ config RGB_MATRIX_LED_FLUSH_LIMIT
 
 config RGB_MATRIX_LED_PROCESS_LIMIT
     int "Maximum LEDs to process per frame"
-    default RGB_MATRIX_LED_COUNT
+    default 255
     range 1 255
     help
       Limits how many LEDs are rendered per frame tick, spreading the
       rendering workload across multiple frames for low-end MCUs.
-      Defaults to the full LED count. Override in your .conf to limit
-      per-frame processing, e.g. (RGB_MATRIX_LED_COUNT + 4) / 5.
+      Default 255 = process all LEDs. Override in your .conf to limit
+      per-frame processing, e.g. CONFIG_RGB_MATRIX_LED_PROCESS_LIMIT=32.
 
 config RGB_WORKQ_STACK_SIZE
     int "RGB workqueue stack size (bytes)"

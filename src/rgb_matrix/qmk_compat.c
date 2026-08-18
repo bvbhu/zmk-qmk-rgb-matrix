@@ -32,6 +32,7 @@ bool is_keyboard_left(void)
 #endif
 }
 
+#ifdef CONFIG_ZMK_HID_INDICATORS
 led_t host_keyboard_led_state(void)
 {
 	uint8_t raw = (uint8_t)zmk_hid_indicators_get_current_profile();
@@ -42,6 +43,7 @@ led_t host_keyboard_led_state(void)
 	};
 	return state;
 }
+#endif /* CONFIG_ZMK_HID_INDICATORS */
 
 uint8_t get_mods(void)
 {

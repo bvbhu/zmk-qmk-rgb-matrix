@@ -10,6 +10,39 @@ menuconfig ZMK_RGB_MATRIX
 
 if ZMK_RGB_MATRIX
 
+config RGB_MATRIX_PERSISTENCE
+    bool "Persist RGB Matrix settings to flash"
+    default y
+    help
+      Persist RGB Matrix settings (enable/mode/HSV/speed) via the Zephyr
+      settings subsystem. Enabled by default along with the settings stack
+      (SETTINGS/NVS/FLASH). Set to n, or explicitly disable CONFIG_SETTINGS,
+      to build without persistence and save flash/RAM.
+
+# 持久化依赖栈默认启用。使用 default 而非 select：
+# 用户显式设 CONFIG_SETTINGS=n 时仍可关闭，此时持久化代码自动裁剪。
+config SETTINGS
+    default y if RGB_MATRIX_PERSISTENCE
+config SETTINGS_NVS
+    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+config NVS
+    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+config FLASH
+    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+config FLASH_PAGE_LAYOUT
+    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+config FLASH_MAP
+    default y if RGB_MATRIX_PERSISTENCE && SETTINGS
+
+# HID 指示灯（Caps/Num/Scroll Lock 状态查询）默认启用；
+# 未启用时 host_keyboard_led_state() 不编译，指示灯回调不可用。
+config ZMK_HID_INDICATORS
+    default y if ZMK_RGB_MATRIX
+
+# 模块接管 &rgb_ug 键码，默认关闭 ZMK 内置 underglow 避免双重处理。
+config ZMK_RGB_UNDERGLOW
+    default n if ZMK_RGB_MATRIX
+
 menu "RGB Matrix Configuration"
 
 config RGB_MATRIX_ROWS

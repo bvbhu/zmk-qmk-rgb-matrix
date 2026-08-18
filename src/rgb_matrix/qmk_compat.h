@@ -11,8 +11,15 @@
 
 #include <stdint.h>
 #include <zmk/hid.h>
-#include <zmk/hid_indicators.h>
 #include <zmk/keymap.h>
+
+/* HID 指示灯（Caps/Num/Scroll Lock 状态）：
+ * 默认启用（模块 Kconfig 已设 ZMK_HID_INDICATORS default y）。
+ * 未启用时 host_keyboard_led_state() 不定义，keymap.c 中的
+ * 指示灯回调不可使用该函数（编译报错提示开启配置）。 */
+#ifdef CONFIG_ZMK_HID_INDICATORS
+#include <zmk/hid_indicators.h>
+#endif
 
 /* MOD_LCTL / MOD_RCTL / MOD_LSFT / MOD_RSFT /
  * MOD_LALT / MOD_RALT / MOD_LGUI / MOD_RGUI
@@ -27,7 +34,9 @@ typedef struct
 	uint8_t scroll_lock : 1;
 } led_t;
 
+#ifdef CONFIG_ZMK_HID_INDICATORS
 led_t host_keyboard_led_state(void);
+#endif
 
 /* ===== Modifier masks ===== */
 #define MOD_MASK_CTRL (MOD_LCTL | MOD_RCTL)

@@ -22,9 +22,13 @@
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-/* ===== Settings 持久化 ===== */
+/* ===== Settings 持久化 =====
+ * CONFIG_SETTINGS 未启用（RGB_MATRIX_PERSISTENCE=n 或用户显式关闭）时，
+ * 持久化代码整体裁剪，出厂默认值直接生效。 */
 
 #define RGB_MATRIX_SETTINGS_KEY "rgb_matrix/state"
+
+#if IS_ENABLED(CONFIG_SETTINGS)
 
 static bool settings_loaded = false;
 static struct k_work_delayable rgb_matrix_save_work;
@@ -92,15 +96,29 @@ static int rgb_matrix_settings_commit(void)
 
 SETTINGS_STATIC_HANDLER_DEFINE(rgb_matrix, "rgb_matrix",
 							   NULL,						/* h_get */
-							   rgb_matrix_settings_set,		/* h_set */
-							   rgb_matrix_settings_commit,	/* h_commit */
-							   rgb_matrix_settings_export); /* h_export */
+								   rgb_matrix_settings_set,		/* h_set */
+								   rgb_matrix_settings_commit,	/* h_commit */
+								   rgb_matrix_settings_export); /* h_export */
 
 /* 初始化 settings 延迟保存工作项 */
 void rgb_matrix_settings_init(void)
 {
 	k_work_init_delayable(&rgb_matrix_save_work, rgb_matrix_save_handler);
 }
+
+#else /* !CONFIG_SETTINGS：持久化关闭 */
+
+void rgb_matrix_settings_save(void)
+{
+}
+
+void rgb_matrix_settings_init(void)
+{
+	/* 无持久化时直接采用出厂默认值 */
+	eeconfig_update_rgb_matrix_default();
+}
+
+#endif /* IS_ENABLED(CONFIG_SETTINGS) */
 
 /* ===== 键码监听器 ===== */
 
@@ -247,6 +265,32 @@ static int rgb_ug_listener(const zmk_event_t* eh)
 					}
 					rgb_matrix_config.mode = mode;
 					rgb_task_state = STARTING;
+				}
+				break;
+			case RGB_EFS_CMD:
+				/* 直接切换到 param2 指定的灯效枚举值（从 1 开始，
+				 * 按 rgb_matrix_effects.inc 中已启用灯效的顺序编号），
+				 * 无效值或与当前相同时忽略 */
+				if(rgb_matrix_config.enable)
+				{
+					uint8_t mode = (uint8_t)binding->param2;
+					if(mode >= 1 && mode < RGB_MATRIX_EFFECT_MAX && mode != rgb_matrix_config.mode)
+					{
+						rgb_matrix_config.mode = mode;
+						rgb_task_state = STARTING;
+					}
+				}
+				break;
+			case RGB_COLOR_HSB_CMD:
+				/* 直接设置颜色，param2 编码 (h << 16) | (s << 8) | v，均为 0-255 */
+				if(rgb_matrix_config.enable)
+				{
+					uint32_t hsb = (uint32_t)binding->param2;
+					rgb_matrix_config.hsv.h = (uint8_t)((hsb >> 16) & 0xFF);
+					rgb_matrix_config.hsv.s = (uint8_t)((hsb >> 8) & 0xFF);
+					rgb_matrix_config.hsv.v = (uint8_t)(hsb & 0xFF);
+					if(rgb_matrix_config.hsv.v > RGB_MATRIX_MAXIMUM_BRIGHTNESS)
+						rgb_matrix_config.hsv.v = RGB_MATRIX_MAXIMUM_BRIGHTNESS;
 				}
 				break;
 			default:

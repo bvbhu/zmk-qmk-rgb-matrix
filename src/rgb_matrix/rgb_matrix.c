@@ -97,6 +97,14 @@ __attribute__((weak)) uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, u
 
 uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *led_i) {
     uint8_t led_count = rgb_matrix_map_row_column_to_led_kb(row, column, led_i);
+    /* kb 可被键盘覆写，led_count 不受信任；调用方缓冲区均为 LED_HITS_TO_REMEMBER 大小 */
+    if (led_count > LED_HITS_TO_REMEMBER) {
+        led_count = LED_HITS_TO_REMEMBER;
+    }
+    /* keymap transform 与 .conf 的 ROWS/COLS 不匹配时 row/column 可能越界 */
+    if (row >= MATRIX_ROWS || column >= MATRIX_COLS || led_count >= LED_HITS_TO_REMEMBER) {
+        return led_count;
+    }
     uint8_t led_index = g_led_config.matrix_co[row][column];
     if (led_index != NO_LED) {
         led_i[led_count] = led_index;

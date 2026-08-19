@@ -21,12 +21,7 @@
 #include "rgb_matrix_mode_select.h"
 #include "utils.h"
 
-#include <dt-bindings/zmk/rgb.h>
-#undef RC
-#include <dt-bindings/zmk/matrix_transform.h>
-#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/util.h>
 #include <zmk/activity.h>
 #include <zmk/usb.h>
 
@@ -97,11 +92,10 @@ __attribute__((weak)) uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, u
 
 uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *led_i) {
     uint8_t led_count = rgb_matrix_map_row_column_to_led_kb(row, column, led_i);
-    /* kb 可被键盘覆写，led_count 不受信任；调用方缓冲区均为 LED_HITS_TO_REMEMBER 大小 */
+    /* 保护数组不越界 */
     if (led_count > LED_HITS_TO_REMEMBER) {
         led_count = LED_HITS_TO_REMEMBER;
     }
-    /* keymap transform 与 .conf 的 ROWS/COLS 不匹配时 row/column 可能越界 */
     if (row >= MATRIX_ROWS || column >= MATRIX_COLS || led_count >= LED_HITS_TO_REMEMBER) {
         return led_count;
     }
@@ -123,7 +117,7 @@ __attribute__((weak)) int rgb_matrix_led_index(int index) {
 
 void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
     const int led_index = rgb_matrix_led_index(index);
-    if (led_index < 0) {
+    if (led_index < 0 || led_index >= RGB_MATRIX_LED_COUNT) {
         return;
     }
 
@@ -145,6 +139,7 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
 #    ifndef RGB_MATRIX_SPLIT
     if (!is_keyboard_master()) return;
 #    endif
+    if (row >= MATRIX_ROWS || col >= MATRIX_COLS) return;
 #    ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
     uint8_t led[LED_HITS_TO_REMEMBER];
     uint8_t led_count = 0;
@@ -159,6 +154,13 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
 
     if (led_count > LED_HITS_TO_REMEMBER) led_count = LED_HITS_TO_REMEMBER;
 
+    uint8_t valid_count = 0;
+    for (uint8_t i = 0; i < led_count; i++) {
+        if (led[i] < RGB_MATRIX_LED_COUNT) led[valid_count++] = led[i];
+    }
+    led_count = valid_count;
+
+    unsigned int lock_key = irq_lock();
     if (last_hit_buffer.count + led_count > LED_HITS_TO_REMEMBER) {
         uint8_t drop = last_hit_buffer.count + led_count - LED_HITS_TO_REMEMBER;
         uint8_t keep = last_hit_buffer.count - drop;
@@ -177,6 +179,7 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
         last_hit_buffer.tick[index]  = 0;
         last_hit_buffer.count++;
     }
+    irq_unlock(lock_key);
 #    endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 #    if defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP)
 #        if defined(RGB_MATRIX_KEYRELEASES)
@@ -234,6 +237,10 @@ static void rgb_task_timers(void) {
 
     // Update double buffer last hit timers
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
+    unsigned int lock_key = irq_lock();
+    if (last_hit_buffer.count > LED_HITS_TO_REMEMBER) {
+        last_hit_buffer.count = LED_HITS_TO_REMEMBER;
+    }
     uint8_t count = last_hit_buffer.count;
     for (uint8_t i = 0; i < count;) {
         if (UINT16_MAX - deltaTime < last_hit_buffer.tick[i]) {
@@ -253,6 +260,7 @@ static void rgb_task_timers(void) {
             i++;
         }
     }
+    irq_unlock(lock_key);
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 }
 
@@ -268,7 +276,9 @@ static void rgb_task_start(void) {
     // update double buffers
     g_rgb_timer = rgb_timer_buffer;
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
-    g_last_hit_tracker = last_hit_buffer;
+    unsigned int lock_key = irq_lock();
+    g_last_hit_tracker    = last_hit_buffer;
+    irq_unlock(lock_key);
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 
     // next task
@@ -278,6 +288,9 @@ static void rgb_task_start(void) {
 static void rgb_task_render(uint8_t effect) {
     bool rendering         = false;
     rgb_effect_params.init = (effect != rgb_last_effect) || (rgb_matrix_config.enable != rgb_last_enable);
+    if (rgb_effect_params.init) {
+        rgb_matrix_set_color_all(0, 0, 0);
+    }
     if (rgb_effect_params.flags != rgb_matrix_config.flags) {
         rgb_effect_params.flags = rgb_matrix_config.flags;
         rgb_matrix_set_color_all(0, 0, 0);
@@ -466,40 +479,7 @@ void rgb_matrix_init(void) {
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 }
 
-/* ===== 定时调度：条件选择系统 workqueue 或独立 workqueue ===== */
-/* 在 config.h 中定义 RGB_WORKQ_STACK_SIZE > 0 启用独立 workqueue。 */
-
-#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-#    define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
-static struct k_work_q rgb_work_q;
-K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
-#endif
-
-/* rgb_tick_handler - periodic rgb_matrix_task dispatch */
-static void rgb_tick_handler(struct k_work *work) {
-    (void)work;
-    rgb_matrix_task();
-}
-
-K_WORK_DEFINE(rgb_tick_work, rgb_tick_handler);
-
-static void rgb_timer_handler(struct k_timer *timer) {
-    (void)timer;
-#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-    k_work_submit_to_queue(&rgb_work_q, &rgb_tick_work); /* 独立 workqueue */
-#else
-    k_work_submit(&rgb_tick_work); /* 系统 workqueue（省 RAM） */
-#endif
-}
-
-K_TIMER_DEFINE(rgb_timer, rgb_timer_handler, NULL);
-
-/* ================================================================
- * QMK 风格控制 API（函数名与 QMK rgb_matrix.c 一致，不带 _noeeprom）
- * ================================================================
- * 持久化通过 rgb_matrix_settings_save()（Zephyr settings 防抖保存），
- * 而非 QMK eeconfig。由 rgb_matrix_behavior.c 的 binding_pressed 调用。
- * 实现逻辑参考 QMK rgb_matrix.c:529-756。 */
+/* 灯效控制 API （函数名 QMK 相同，但使用zmk的保存机制且默认保存）*/
 
 void rgb_matrix_toggle(void) {
     rgb_matrix_config.enable ^= 1;
@@ -550,7 +530,6 @@ void rgb_matrix_step_reverse(void) {
     uint8_t mode = rgb_matrix_config.mode - 1;
     rgb_matrix_mode((mode < 1) ? RGB_MATRIX_EFFECT_MAX - 1 : mode);
 }
-
 void rgb_matrix_sethsv(uint16_t hue, uint8_t sat, uint8_t val) {
     if (!rgb_matrix_config.enable) {
         return;
@@ -564,15 +543,12 @@ void rgb_matrix_sethsv(uint16_t hue, uint8_t sat, uint8_t val) {
 hsv_t rgb_matrix_get_hsv(void) {
     return rgb_matrix_config.hsv;
 }
-
 uint8_t rgb_matrix_get_hue(void) {
     return rgb_matrix_config.hsv.h;
 }
-
 uint8_t rgb_matrix_get_sat(void) {
     return rgb_matrix_config.hsv.s;
 }
-
 uint8_t rgb_matrix_get_val(void) {
     return rgb_matrix_config.hsv.v;
 }
@@ -580,27 +556,21 @@ uint8_t rgb_matrix_get_val(void) {
 void rgb_matrix_increase_hue(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h + RGB_MATRIX_HUE_STEP, rgb_matrix_config.hsv.s, rgb_matrix_config.hsv.v);
 }
-
 void rgb_matrix_decrease_hue(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h - RGB_MATRIX_HUE_STEP, rgb_matrix_config.hsv.s, rgb_matrix_config.hsv.v);
 }
-
 void rgb_matrix_increase_sat(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h, qadd8(rgb_matrix_config.hsv.s, RGB_MATRIX_SAT_STEP), rgb_matrix_config.hsv.v);
 }
-
 void rgb_matrix_decrease_sat(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h, qsub8(rgb_matrix_config.hsv.s, RGB_MATRIX_SAT_STEP), rgb_matrix_config.hsv.v);
 }
-
 void rgb_matrix_increase_val(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h, rgb_matrix_config.hsv.s, qadd8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP));
 }
-
 void rgb_matrix_decrease_val(void) {
     rgb_matrix_sethsv(rgb_matrix_config.hsv.h, rgb_matrix_config.hsv.s, qsub8(rgb_matrix_config.hsv.v, RGB_MATRIX_VAL_STEP));
 }
-
 void rgb_matrix_set_speed(uint8_t speed) {
     rgb_matrix_config.speed = speed;
     rgb_matrix_settings_save();
@@ -613,25 +583,6 @@ uint8_t rgb_matrix_get_speed(void) {
 void rgb_matrix_increase_speed(void) {
     rgb_matrix_set_speed(qadd8(rgb_matrix_config.speed, RGB_MATRIX_SPD_STEP));
 }
-
 void rgb_matrix_decrease_speed(void) {
     rgb_matrix_set_speed(qsub8(rgb_matrix_config.speed, RGB_MATRIX_SPD_STEP));
 }
-
-/* Initialize rgb_matrix + start periodic timer */
-int rgb_matrix_controller_init(void) {
-    rgb_matrix_settings_init();
-    rgb_matrix_init();
-
-#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
-    /* k_work_q_start 在 Zephyr 3.1 起重命名为 k_work_queue_start，并新增 cfg 参数 */
-    k_work_queue_start(&rgb_work_q, rgb_work_q_stack, K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY, NULL);
-#endif
-
-    k_timer_start(&rgb_timer, K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT), K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT));
-
-    LOG_INF("RGB matrix controller initialized");
-    return 0;
-}
-
-SYS_INIT(rgb_matrix_controller_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

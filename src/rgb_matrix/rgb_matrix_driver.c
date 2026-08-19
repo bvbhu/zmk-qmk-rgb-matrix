@@ -23,16 +23,21 @@
  * 2. 设置持久化：
  *    通过 Zephyr settings 子系统保存/恢复灯光参数（非 QMK eeconfig）。
  *    CONFIG_RGB_MATRIX_PERSISTENCE=n 或 CONFIG_SETTINGS=n 时整体裁剪。
+ *
+ * 3. 定时调度与系统初始化：
+ *    workqueue/timer 周期调度 rgb_matrix_task + SYS_INIT 注册
+ *    （从 rgb_matrix.c 迁移至此，ZMK 专属实现与 QMK 兼容逻辑解耦）。
  */
 
 #include "rgb_matrix_driver.h"
 #include "rgb_matrix.h"
-#include "utils.h"
 
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/led_strip.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/settings/settings.h>
 
@@ -188,3 +193,56 @@ void rgb_matrix_settings_init(void)
 }
 
 #endif /* IS_ENABLED(CONFIG_RGB_MATRIX_PERSISTENCE) && IS_ENABLED(CONFIG_SETTINGS) */
+
+/* ================================================================
+ * 3. 定时调度与系统初始化（ZMK workqueue / timer）
+ * ================================================================
+ * 从 rgb_matrix.c 迁移：周期调度 rgb_matrix_task + SYS_INIT 注册。
+ * RGB_WORKQ_STACK_SIZE > 0 时启用独立 workqueue，否则复用系统
+ * workqueue（省 RAM）。 */
+
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+#	define RGB_WORKQ_PRIORITY (CONFIG_MAIN_THREAD_PRIORITY + 1)
+static struct k_work_q rgb_work_q;
+K_THREAD_STACK_DEFINE(rgb_work_q_stack, RGB_WORKQ_STACK_SIZE);
+#endif
+
+/* rgb_tick_handler - periodic rgb_matrix_task dispatch */
+static void rgb_tick_handler(struct k_work* work)
+{
+	(void)work;
+	rgb_matrix_task();
+}
+
+K_WORK_DEFINE(rgb_tick_work, rgb_tick_handler);
+
+static void rgb_timer_handler(struct k_timer* timer)
+{
+	(void)timer;
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+	k_work_submit_to_queue(&rgb_work_q, &rgb_tick_work); /* 独立 workqueue */
+#else
+	k_work_submit(&rgb_tick_work); /* 系统 workqueue（省 RAM） */
+#endif
+}
+
+K_TIMER_DEFINE(rgb_timer, rgb_timer_handler, NULL);
+
+/* Initialize rgb_matrix + start periodic timer */
+int rgb_matrix_controller_init(void)
+{
+	rgb_matrix_settings_init();
+	rgb_matrix_init();
+
+#if defined(RGB_WORKQ_STACK_SIZE) && RGB_WORKQ_STACK_SIZE > 0
+	/* k_work_q_start 在 Zephyr 3.1 起重命名为 k_work_queue_start，并新增 cfg 参数 */
+	k_work_queue_start(&rgb_work_q, rgb_work_q_stack, K_THREAD_STACK_SIZEOF(rgb_work_q_stack), RGB_WORKQ_PRIORITY, NULL);
+#endif
+
+	k_timer_start(&rgb_timer, K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT), K_MSEC(RGB_MATRIX_LED_FLUSH_LIMIT));
+
+	LOG_INF("RGB matrix controller initialized");
+	return 0;
+}
+
+SYS_INIT(rgb_matrix_controller_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

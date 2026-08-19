@@ -47,11 +47,6 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 	{                                              \
 		rgb_matrix_set_color(i, r, g, b);          \
 	}
-/* TODO: 重构该宏的覆盖机制。当前指示灯颜色在灯效渲染周期内设置，
- * 但部分灯效（如 PIXEL_RAIN）在后续渲染周期中不会刷新已被指示灯
- * 设置的 LED 位置，导致指示灯关闭后颜色残留（未被灯效覆盖）。
- * 需改为后渲染覆盖（post-render overlay）机制，在灯效全部渲染
- * 完成后统一设置指示灯，确保指示灯关闭时灯效能正常覆盖该位置。 */
 
 #define RGB_MATRIX_TEST_LED_FLAGS() \
     if (!HAS_ANY_FLAGS(g_led_config.flags[i], params->flags)) continue

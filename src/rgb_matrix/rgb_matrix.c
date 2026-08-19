@@ -90,15 +90,20 @@ __attribute__((weak)) uint8_t rgb_matrix_map_row_column_to_led_kb(uint8_t row, u
     return 0;
 }
 
+/* row/col → LED 列表。*/
 uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *led_i) {
+    if (row >= MATRIX_ROWS || column >= MATRIX_COLS) {
+        return 0;
+    }
+
     uint8_t led_count = rgb_matrix_map_row_column_to_led_kb(row, column, led_i);
-    /* 保护数组不越界 */
     if (led_count > LED_HITS_TO_REMEMBER) {
         led_count = LED_HITS_TO_REMEMBER;
     }
-    if (row >= MATRIX_ROWS || column >= MATRIX_COLS || led_count >= LED_HITS_TO_REMEMBER) {
+    if (led_count >= LED_HITS_TO_REMEMBER) {
         return led_count;
     }
+
     uint8_t led_index = g_led_config.matrix_co[row][column];
     if (led_index != NO_LED) {
         led_i[led_count] = led_index;
@@ -117,7 +122,7 @@ __attribute__((weak)) int rgb_matrix_led_index(int index) {
 
 void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
     const int led_index = rgb_matrix_led_index(index);
-    if (led_index < 0 || led_index >= RGB_MATRIX_LED_COUNT) {
+    if (led_index < 0 || (uint8_t)led_index >= RGB_MATRIX_LOCAL_LED_COUNT) {
         return;
     }
 
@@ -126,8 +131,12 @@ void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
 
 void rgb_matrix_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
 #if defined(RGB_MATRIX_SPLIT)
-    for (uint8_t i = 0; i < RGB_MATRIX_LED_COUNT; i++)
+    uint8_t split[2]    = RGB_MATRIX_SPLIT;
+    uint8_t side_min    = is_keyboard_left() ? 0 : split[0];
+    uint8_t side_max    = is_keyboard_left() ? split[0] : RGB_MATRIX_LED_COUNT;
+    for (uint8_t i = side_min; i < side_max; i++) {
         rgb_matrix_set_color(i, red, green, blue);
+    }
 #else
     rgb_matrix_driver.set_color_all(red, green, blue);
 #endif
@@ -152,7 +161,6 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
         led_count = rgb_matrix_map_row_column_to_led(row, col, led);
     }
 
-    if (led_count > LED_HITS_TO_REMEMBER) led_count = LED_HITS_TO_REMEMBER;
 
     uint8_t valid_count = 0;
     for (uint8_t i = 0; i < led_count; i++) {
@@ -429,7 +437,7 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter) {
 
     uint16_t process_limit = RGB_MATRIX_LED_PROCESS_LIMIT;
     uint16_t side_count    = side_max - side_min;
-    if (process_limit == 0 /* 防御：Kconfig range 1~255 保证 > 0 */ || process_limit >= side_count) {
+    if (process_limit >= side_count) {
         // LED 数不超过单帧处理上限：一帧处理全部
         limits.led_min_index = side_min;
         limits.led_max_index = side_max;

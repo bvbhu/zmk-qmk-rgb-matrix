@@ -25,7 +25,16 @@
 |--------|------|------|
 | `RGB_MATRIX_ROWS` | int | 矩阵行数 |
 | `RGB_MATRIX_COLS` | int | 矩阵列数 |
-| `RGB_MATRIX_LED_COUNT` | int | 灯珠数量 |
+| `RGB_MATRIX_LED_COUNT` | int | 灯珠数量（分体键盘可以只定义左右灯珠数量） |
+
+## 2.1 分体键盘（可选）
+
+| 配置项 | 类型  | 说明 |
+|--------|------|------|
+| `RGB_MATRIX_SPLIT_LED_COUNT_LEFT` | int | 左半（central）灯珠数量 |
+| `RGB_MATRIX_SPLIT_LED_COUNT_RIGHT` | int | 右半（peripheral）灯珠数量 |
+
+> 左右必须同时设置或同时不设置，同时设置会自动启用分体键盘逻辑。若同时显式设置了 `RGB_MATRIX_LED_COUNT`，其值必须等于两侧之和（编译期校验）。
 
 ## 3. 渲染参数
 

@@ -148,9 +148,17 @@ CONFIG_WS2812_STRIP=y
 
 ### 第 7 步（可选）：分体键盘
 
+在 `config/<keyboard>.conf` 中同时配置左右半灯珠数量即自动启用分裂键盘逻辑：
+
+```conf
+CONFIG_RGB_MATRIX_SPLIT_LED_COUNT_LEFT=36
+CONFIG_RGB_MATRIX_SPLIT_LED_COUNT_RIGHT=36
+```
+
+
+- 左右数量必须**同时设置或同时不设置**，只设一侧会编译报错；同时设置会自动计算`RGB_MATRIX_LED_COUNT`。
 - `is_keyboard_left()` 默认遵循 ZMK split 惯例（central = 左半）；`CONFIG_RGB_MATRIX_IS_LEFT=y` 可强制为 true。
 - Key Reactive 灯效仅在 master（central）端记录击键。
-- 如需左右各自渲染，参考 QMK 的 `RGB_MATRIX_SPLIT` 机制在 `qmk_compat` 层定义。
 
 ### 第 8 步：构建验证
 

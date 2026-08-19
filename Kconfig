@@ -64,6 +64,26 @@ config RGB_MATRIX_LED_COUNT
       Total number of RGB LED pixels on the keyboard.
       MUST be overridden in keyboard .conf, e.g. CONFIG_RGB_MATRIX_LED_COUNT=69.
       Same sentinel / compile-time-guard rationale as RGB_MATRIX_ROWS.
+      When the two split counts below are both set, this is derived as
+      their sum and does not need to be set.
+
+config RGB_MATRIX_SPLIT_LED_COUNT_LEFT
+    int "LED count of the left half (split)"
+    default 0
+    help
+      Number of RGB pixels on the left (central) half.
+      Must be set together with RGB_MATRIX_SPLIT_LED_COUNT_RIGHT (a build
+      error is raised if only one side is set). When both are > 0, split
+      mode is enabled automatically (RGB_MATRIX_SPLIT is derived) and
+      RGB_MATRIX_LED_COUNT becomes their sum. If RGB_MATRIX_LED_COUNT is
+      also set explicitly it must equal the sum.
+
+config RGB_MATRIX_SPLIT_LED_COUNT_RIGHT
+    int "LED count of the right half (split)"
+    default 0
+    help
+      Number of RGB pixels on the right (peripheral) half.
+      See RGB_MATRIX_SPLIT_LED_COUNT_LEFT.
 
 config RGB_MATRIX_CENTER_X
     int "LED center X coordinate (0-255)"

@@ -33,6 +33,14 @@ struct rgb_matrix_limits_t {
 
 struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 
+/* 本侧 LED 数：split 时左右半分别用显式配置的数量 */
+#if defined(RGB_MATRIX_SPLIT)
+#define RGB_MATRIX_LOCAL_LED_COUNT \
+    (is_keyboard_left() ? RGB_MATRIX_SPLIT_LED_COUNT_LEFT : RGB_MATRIX_SPLIT_LED_COUNT_RIGHT)
+#else
+#define RGB_MATRIX_LOCAL_LED_COUNT (RGB_MATRIX_LED_COUNT)
+#endif
+
 #define RGB_MATRIX_USE_LIMITS_ITER(min, max, iter)                   \
     struct rgb_matrix_limits_t limits = rgb_matrix_get_limits(iter); \
     uint8_t                    min    = limits.led_min_index;        \

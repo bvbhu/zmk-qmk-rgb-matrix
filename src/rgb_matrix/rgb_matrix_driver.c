@@ -64,6 +64,10 @@ static void driver_init(void)
 
 static void driver_set_color(int index, uint8_t r, uint8_t g, uint8_t b)
 {
+	if(index < 0 || (uint8_t)index >= RGB_MATRIX_LED_COUNT)
+	{
+		return;
+	}
 	led_strip_pixels[index].r = r;
 	led_strip_pixels[index].g = g;
 	led_strip_pixels[index].b = b;
@@ -82,9 +86,7 @@ static void driver_set_color_all(uint8_t r, uint8_t g, uint8_t b)
 static void driver_flush(void)
 {
 	if(led_strip_dev)
-	{
-		led_strip_update_rgb(led_strip_dev, led_strip_pixels, RGB_MATRIX_LED_COUNT);
-	}
+		led_strip_update_rgb(led_strip_dev, led_strip_pixels, RGB_MATRIX_LOCAL_LED_COUNT);
 }
 
 const rgb_matrix_driver_t rgb_matrix_driver = {

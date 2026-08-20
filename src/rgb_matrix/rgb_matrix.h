@@ -134,7 +134,6 @@ extern last_hit_t g_last_hit_tracker;
 extern uint8_t g_rgb_frame_buffer[MATRIX_ROWS][MATRIX_COLS];
 #endif
 
-extern rgb_task_states rgb_task_state;
 rgb_t rgb_matrix_hsv_to_rgb(hsv_t hsv);
 int rgb_matrix_controller_init(void);
 

@@ -27,6 +27,13 @@
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
+#ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
+static struct k_spinlock rgb_last_hit_lock;
+#endif
+#ifdef RGB_MATRIX_FRAMEBUFFER_EFFECTS
+static struct k_spinlock rgb_framebuffer_lock;
+#endif
+
 #ifndef RGB_MATRIX_CENTER
 const led_point_t k_rgb_matrix_center = {112, 32};
 #else
@@ -168,7 +175,7 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
     }
     led_count = valid_count;
 
-    unsigned int lock_key = irq_lock();
+    k_spinlock_key_t lock_key = k_spin_lock(&rgb_last_hit_lock);
     if (last_hit_buffer.count + led_count > LED_HITS_TO_REMEMBER) {
         uint8_t drop = last_hit_buffer.count + led_count - LED_HITS_TO_REMEMBER;
         uint8_t keep = last_hit_buffer.count - drop;
@@ -187,7 +194,7 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
         last_hit_buffer.tick[index]  = 0;
         last_hit_buffer.count++;
     }
-    irq_unlock(lock_key);
+    k_spin_unlock(&rgb_last_hit_lock, lock_key);
 #    endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 #    if defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP)
 #        if defined(RGB_MATRIX_KEYRELEASES)
@@ -245,7 +252,7 @@ static void rgb_task_timers(void) {
 
     // Update double buffer last hit timers
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
-    unsigned int lock_key = irq_lock();
+    k_spinlock_key_t lock_key = k_spin_lock(&rgb_last_hit_lock);
     if (last_hit_buffer.count > LED_HITS_TO_REMEMBER) {
         last_hit_buffer.count = LED_HITS_TO_REMEMBER;
     }
@@ -268,7 +275,7 @@ static void rgb_task_timers(void) {
             i++;
         }
     }
-    irq_unlock(lock_key);
+    k_spin_unlock(&rgb_last_hit_lock, lock_key);
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 }
 
@@ -284,9 +291,9 @@ static void rgb_task_start(void) {
     // update double buffers
     g_rgb_timer = rgb_timer_buffer;
 #ifdef RGB_MATRIX_KEYREACTIVE_ENABLED
-    unsigned int lock_key = irq_lock();
-    g_last_hit_tracker    = last_hit_buffer;
-    irq_unlock(lock_key);
+    k_spinlock_key_t lock_key = k_spin_lock(&rgb_last_hit_lock);
+    g_last_hit_tracker        = last_hit_buffer;
+    k_spin_unlock(&rgb_last_hit_lock, lock_key);
 #endif // RGB_MATRIX_KEYREACTIVE_ENABLED
 
     // next task

@@ -20,13 +20,16 @@ bool DIGITAL_RAIN(effect_params_t* params) {
 
     if (params->init) {
         rgb_matrix_set_color_all(0, 0, 0);
+        k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
         memset(g_rgb_frame_buffer, 0, sizeof(g_rgb_frame_buffer));
+        k_spin_unlock(&rgb_framebuffer_lock, fb_key);
         drop = 0;
     }
 
     decay++;
     for (uint8_t col = 0; col < MATRIX_COLS; col++) {
         for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
+            k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
             if (row == 0 && drop == 0 && rand() < RAND_MAX / RGB_DIGITAL_RAIN_DROPS) {
                 // top row, pixels have just fallen and we're
                 // making a new rain drop in this column
@@ -37,12 +40,14 @@ bool DIGITAL_RAIN(effect_params_t* params) {
                     g_rgb_frame_buffer[row][col]--;
                 }
             }
+            k_spin_unlock(&rgb_framebuffer_lock, fb_key);
             // set the pixel colour
             uint8_t led[LED_HITS_TO_REMEMBER];
             uint8_t led_count = rgb_matrix_map_row_column_to_led(row, col, led);
 
             // TODO: multiple leds are supported mapped to the same row/column
             if (led_count > 0) {
+                k_spinlock_key_t fb_key2 = k_spin_lock(&rgb_framebuffer_lock);
                 if (g_rgb_frame_buffer[row][col] > pure_green_intensity) {
                     const uint8_t boost = (uint8_t)((uint16_t)max_brightness_boost * (g_rgb_frame_buffer[row][col] - pure_green_intensity) / (max_intensity - pure_green_intensity));
                     rgb_matrix_set_color(led[0], boost, max_intensity, boost);
@@ -50,6 +55,7 @@ bool DIGITAL_RAIN(effect_params_t* params) {
                     const uint8_t green = (uint8_t)((uint16_t)max_intensity * g_rgb_frame_buffer[row][col] / pure_green_intensity);
                     rgb_matrix_set_color(led[0], 0, green, 0);
                 }
+                k_spin_unlock(&rgb_framebuffer_lock, fb_key2);
             }
         }
     }
@@ -62,6 +68,7 @@ bool DIGITAL_RAIN(effect_params_t* params) {
         drop = 0;
         for (uint8_t row = MATRIX_ROWS - 1; row > 0; row--) {
             for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+                k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
                 // if ths is on the bottom row and bright allow decay
                 if (row == MATRIX_ROWS - 1 && g_rgb_frame_buffer[row][col] == max_intensity) {
                     g_rgb_frame_buffer[row][col]--;
@@ -73,6 +80,7 @@ bool DIGITAL_RAIN(effect_params_t* params) {
                     // make this pixel bright
                     g_rgb_frame_buffer[row][col] = max_intensity;
                 }
+                k_spin_unlock(&rgb_framebuffer_lock, fb_key);
             }
         }
     }

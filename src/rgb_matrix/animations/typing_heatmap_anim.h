@@ -19,9 +19,7 @@ RGB_MATRIX_EFFECT(TYPING_HEATMAP)
 void process_rgb_matrix_typing_heatmap(uint8_t row, uint8_t col) {
 #        ifdef RGB_MATRIX_TYPING_HEATMAP_SLIM
     // Limit effect to pressed keys
-    k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
     g_rgb_frame_buffer[row][col] = qadd8(g_rgb_frame_buffer[row][col], RGB_MATRIX_TYPING_HEATMAP_INCREASE_STEP);
-    k_spin_unlock(&rgb_framebuffer_lock, fb_key);
 #        else
     if (g_led_config.matrix_co[row][col] == NO_LED) { // skip as pressed key doesn't have an led position
         return;
@@ -32,9 +30,7 @@ void process_rgb_matrix_typing_heatmap(uint8_t row, uint8_t col) {
                 continue;
             }
             if (i_row == row && i_col == col) {
-                k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
                 g_rgb_frame_buffer[row][col] = qadd8(g_rgb_frame_buffer[row][col], RGB_MATRIX_TYPING_HEATMAP_INCREASE_STEP);
-                k_spin_unlock(&rgb_framebuffer_lock, fb_key);
             } else {
 #            define LED_DISTANCE(led_a, led_b) sqrt16(((int32_t)(led_a.x - led_b.x) * (int32_t)(led_a.x - led_b.x)) + ((int32_t)(led_a.y - led_b.y) * (int32_t)(led_a.y - led_b.y)))
                 uint8_t distance = LED_DISTANCE(g_led_config.point[g_led_config.matrix_co[row][col]], g_led_config.point[g_led_config.matrix_co[i_row][i_col]]);
@@ -44,9 +40,7 @@ void process_rgb_matrix_typing_heatmap(uint8_t row, uint8_t col) {
                     if (amount > RGB_MATRIX_TYPING_HEATMAP_AREA_LIMIT) {
                         amount = RGB_MATRIX_TYPING_HEATMAP_AREA_LIMIT;
                     }
-                    k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
                     g_rgb_frame_buffer[i_row][i_col] = qadd8(g_rgb_frame_buffer[i_row][i_col], amount);
-                    k_spin_unlock(&rgb_framebuffer_lock, fb_key);
                 }
             }
         }
@@ -64,9 +58,7 @@ bool TYPING_HEATMAP(effect_params_t* params) {
 
     if (params->init) {
         rgb_matrix_set_color_all(0, 0, 0);
-        k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
         memset(g_rgb_frame_buffer, 0, sizeof g_rgb_frame_buffer);
-        k_spin_unlock(&rgb_framebuffer_lock, fb_key);
     }
 
     // The heatmap animation might run in several iterations depending on
@@ -87,9 +79,7 @@ bool TYPING_HEATMAP(effect_params_t* params) {
         for (uint8_t col = 0; col < MATRIX_COLS && RGB_MATRIX_LED_PROCESS_LIMIT; col++) {
             if (g_led_config.matrix_co[row][col] >= led_min && g_led_config.matrix_co[row][col] < led_max) {
                 count++;
-                k_spinlock_key_t fb_key = k_spin_lock(&rgb_framebuffer_lock);
                 uint8_t val = g_rgb_frame_buffer[row][col];
-                k_spin_unlock(&rgb_framebuffer_lock, fb_key);
                 if (!HAS_ANY_FLAGS(g_led_config.flags[g_led_config.matrix_co[row][col]], params->flags)) continue;
 
                 hsv_t hsv = {170 - qsub8(val, 85), rgb_matrix_config.hsv.s, scale8((qadd8(170, val) - 170) * 3, rgb_matrix_config.hsv.v)};
@@ -97,9 +87,7 @@ bool TYPING_HEATMAP(effect_params_t* params) {
                 rgb_matrix_set_color(g_led_config.matrix_co[row][col], rgb.r, rgb.g, rgb.b);
 
                 if (decrease_heatmap_values) {
-                    k_spinlock_key_t fb_key2 = k_spin_lock(&rgb_framebuffer_lock);
-                    g_rgb_frame_buffer[row][col] = qsub8(g_rgb_frame_buffer[row][col], 1);
-                    k_spin_unlock(&rgb_framebuffer_lock, fb_key2);
+                    g_rgb_frame_buffer[row][col] = qsub8(val, 1);
                 }
             }
         }

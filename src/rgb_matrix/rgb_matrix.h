@@ -33,6 +33,10 @@ struct rgb_matrix_limits_t {
 
 struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 
+#if defined(RGB_MATRIX_SPLIT)
+extern const uint8_t rgb_matrix_split[2];
+#endif
+
 /* 本侧 LED 数：split 时左右半分别用显式配置的数量 */
 #if defined(RGB_MATRIX_SPLIT)
 #define RGB_MATRIX_LOCAL_LED_COUNT \
@@ -51,10 +55,9 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter);
 #define RGB_MATRIX_USE_LIMITS(min, max) RGB_MATRIX_USE_LIMITS_ITER(min, max, params->iter)
 
 #define RGB_MATRIX_INDICATOR_SET_COLOR(i, r, g, b) \
-	if(i >= led_min && i < led_max)                \
-	{                                              \
-		rgb_matrix_set_color(i, r, g, b);          \
-	}
+    if (i >= led_min && i < led_max) {             \
+        rgb_matrix_set_color(i, r, g, b);          \
+    }
 
 #define RGB_MATRIX_TEST_LED_FLAGS() \
     if (!HAS_ANY_FLAGS(g_led_config.flags[i], params->flags)) continue
@@ -108,8 +111,7 @@ void rgb_matrix_init(void);
 static inline bool rgb_matrix_check_finished_leds(uint8_t led_idx) {
 #if defined(RGB_MATRIX_SPLIT)
     if (is_keyboard_left()) {
-        uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
-        return led_idx < k_rgb_matrix_split[0];
+        return led_idx < rgb_matrix_split[0];
     } else
         return led_idx < RGB_MATRIX_LED_COUNT;
 #else

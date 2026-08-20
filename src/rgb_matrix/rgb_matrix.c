@@ -83,7 +83,7 @@ static last_hit_t last_hit_buffer;
 
 // split rgb matrix
 #if defined(RGB_MATRIX_SPLIT)
-const uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
+const uint8_t rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
 #endif
 void eeconfig_update_rgb_matrix_default(void) {
     rgb_matrix_config.enable = RGB_MATRIX_DEFAULT_ON;
@@ -120,8 +120,8 @@ uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *l
 }
 __attribute__((weak)) int rgb_matrix_led_index(int index) {
 #if defined(RGB_MATRIX_SPLIT)
-    if (!is_keyboard_left() && index >= k_rgb_matrix_split[0]) {
-        return index - k_rgb_matrix_split[0];
+    if (!is_keyboard_left() && index >= rgb_matrix_split[0]) {
+        return index - rgb_matrix_split[0];
     }
 #endif
     return index;
@@ -138,9 +138,8 @@ void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
 
 void rgb_matrix_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
 #if defined(RGB_MATRIX_SPLIT)
-    uint8_t split[2]    = RGB_MATRIX_SPLIT;
-    uint8_t side_min    = is_keyboard_left() ? 0 : split[0];
-    uint8_t side_max    = is_keyboard_left() ? split[0] : RGB_MATRIX_LED_COUNT;
+    uint8_t side_min = is_keyboard_left() ? 0 : rgb_matrix_split[0];
+    uint8_t side_max = is_keyboard_left() ? rgb_matrix_split[0] : RGB_MATRIX_LED_COUNT;
     for (uint8_t i = side_min; i < side_max; i++) {
         rgb_matrix_set_color(i, red, green, blue);
     }
@@ -204,7 +203,9 @@ void rgb_matrix_handle_key_event(uint8_t row, uint8_t col, bool pressed) {
 #        endif // defined(RGB_MATRIX_KEYRELEASES)
     {
         if (rgb_matrix_config.mode == RGB_MATRIX_TYPING_HEATMAP) {
+            k_spinlock_key_t lock_key = k_spin_lock(&rgb_framebuffer_lock);
             process_rgb_matrix_typing_heatmap(row, col);
+            k_spin_unlock(&rgb_framebuffer_lock, lock_key);
         }
     }
 #    endif // defined(RGB_MATRIX_FRAMEBUFFER_EFFECTS) && defined(ENABLE_RGB_MATRIX_TYPING_HEATMAP)
@@ -355,7 +356,6 @@ static void rgb_task_flush(uint8_t effect) {
     rgb_last_effect = effect;
     rgb_last_enable = rgb_matrix_config.enable;
 
-    // update pwm buffers
     rgb_matrix_driver.flush();
 
     // next task
@@ -397,7 +397,24 @@ void rgb_matrix_task(void) {
             rgb_task_start();
             break;
         case RENDERING:
+#ifdef RGB_MATRIX_FRAMEBUFFER_EFFECTS
+            if (
+#ifdef ENABLE_RGB_MATRIX_TYPING_HEATMAP
+                effect == RGB_MATRIX_TYPING_HEATMAP ||
+#endif
+#ifdef ENABLE_RGB_MATRIX_DIGITAL_RAIN
+                effect == RGB_MATRIX_DIGITAL_RAIN ||
+#endif
+                false) {
+                k_spinlock_key_t lock_key = k_spin_lock(&rgb_framebuffer_lock);
+                rgb_task_render(effect);
+                k_spin_unlock(&rgb_framebuffer_lock, lock_key);
+            } else {
+                rgb_task_render(effect);
+            }
+#else
             rgb_task_render(effect);
+#endif
             if (effect) {
                 if (rgb_task_state == FLUSHING) { // ensure we only draw basic indicators once rendering is finished
                     rgb_matrix_indicators();
@@ -438,8 +455,8 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter) {
     uint8_t side_min = 0;
     uint8_t side_max = RGB_MATRIX_LED_COUNT;
 #if defined(RGB_MATRIX_SPLIT)
-    if (is_keyboard_left() && (side_max > k_rgb_matrix_split[0])) side_max = k_rgb_matrix_split[0];
-    if (!(is_keyboard_left()) && (side_min < k_rgb_matrix_split[0])) side_min = k_rgb_matrix_split[0];
+    if (is_keyboard_left() && (side_max > rgb_matrix_split[0])) side_max = rgb_matrix_split[0];
+    if (!(is_keyboard_left()) && (side_min < rgb_matrix_split[0])) side_min = rgb_matrix_split[0];
 #endif
 
     uint16_t process_limit = RGB_MATRIX_LED_PROCESS_LIMIT;

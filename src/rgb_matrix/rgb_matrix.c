@@ -72,8 +72,9 @@ last_hit_t g_last_hit_tracker;
 // internals
 static uint8_t         rgb_last_enable    = UINT8_MAX;
 static uint8_t         rgb_last_effect    = UINT8_MAX;
+static uint8_t         rgb_current_effect = 0;
 static effect_params_t rgb_effect_params  = {0, LED_FLAG_ALL, false};
-rgb_task_states        rgb_task_state     = SYNCING;
+static rgb_task_states rgb_task_state     = SYNCING;
 
 // double buffers
 static uint32_t rgb_timer_buffer;
@@ -83,7 +84,7 @@ static last_hit_t last_hit_buffer;
 
 // split rgb matrix
 #if defined(RGB_MATRIX_SPLIT)
-const uint8_t rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
+const uint8_t k_rgb_matrix_split[2] = RGB_MATRIX_SPLIT;
 #endif
 void eeconfig_update_rgb_matrix_default(void) {
     rgb_matrix_config.enable = RGB_MATRIX_DEFAULT_ON;
@@ -120,8 +121,8 @@ uint8_t rgb_matrix_map_row_column_to_led(uint8_t row, uint8_t column, uint8_t *l
 }
 __attribute__((weak)) int rgb_matrix_led_index(int index) {
 #if defined(RGB_MATRIX_SPLIT)
-    if (!is_keyboard_left() && index >= rgb_matrix_split[0]) {
-        return index - rgb_matrix_split[0];
+    if (!is_keyboard_left() && index >= k_rgb_matrix_split[0]) {
+        return index - k_rgb_matrix_split[0];
     }
 #endif
     return index;
@@ -138,8 +139,8 @@ void rgb_matrix_set_color(int index, uint8_t red, uint8_t green, uint8_t blue) {
 
 void rgb_matrix_set_color_all(uint8_t red, uint8_t green, uint8_t blue) {
 #if defined(RGB_MATRIX_SPLIT)
-    uint8_t side_min = is_keyboard_left() ? 0 : rgb_matrix_split[0];
-    uint8_t side_max = is_keyboard_left() ? rgb_matrix_split[0] : RGB_MATRIX_LED_COUNT;
+    uint8_t side_min = is_keyboard_left() ? 0 : k_rgb_matrix_split[0];
+    uint8_t side_max = is_keyboard_left() ? k_rgb_matrix_split[0] : RGB_MATRIX_LED_COUNT;
     for (uint8_t i = side_min; i < side_max; i++) {
         rgb_matrix_set_color(i, red, green, blue);
     }
@@ -285,7 +286,8 @@ static void rgb_task_sync(void) {
     if (sync_timer_elapsed32(g_rgb_timer) >= RGB_MATRIX_LED_FLUSH_LIMIT) rgb_task_state = STARTING;
 }
 
-static void rgb_task_start(void) {
+static void rgb_task_start(bool rgb_idle_off) {
+    rgb_current_effect = rgb_matrix_config.enable && !rgb_idle_off ? rgb_matrix_config.mode : RGB_MATRIX_NONE;
     // reset iter
     rgb_effect_params.iter = 0;
 
@@ -390,11 +392,11 @@ void rgb_matrix_task(void) {
     }
     prev_idle_off = rgb_idle_off;
 
-    uint8_t effect = rgb_matrix_config.enable && !rgb_idle_off ? rgb_matrix_config.mode : RGB_MATRIX_NONE;
+    uint8_t effect = rgb_current_effect;
 
     switch (rgb_task_state) {
         case STARTING:
-            rgb_task_start();
+            rgb_task_start(rgb_idle_off);
             break;
         case RENDERING:
 #ifdef RGB_MATRIX_FRAMEBUFFER_EFFECTS
@@ -455,8 +457,8 @@ struct rgb_matrix_limits_t rgb_matrix_get_limits(uint8_t iter) {
     uint8_t side_min = 0;
     uint8_t side_max = RGB_MATRIX_LED_COUNT;
 #if defined(RGB_MATRIX_SPLIT)
-    if (is_keyboard_left() && (side_max > rgb_matrix_split[0])) side_max = rgb_matrix_split[0];
-    if (!(is_keyboard_left()) && (side_min < rgb_matrix_split[0])) side_min = rgb_matrix_split[0];
+    if (is_keyboard_left() && (side_max > k_rgb_matrix_split[0])) side_max = k_rgb_matrix_split[0];
+    if (!(is_keyboard_left()) && (side_min < k_rgb_matrix_split[0])) side_min = k_rgb_matrix_split[0];
 #endif
 
     uint16_t process_limit = RGB_MATRIX_LED_PROCESS_LIMIT;

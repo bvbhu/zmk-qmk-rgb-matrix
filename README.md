@@ -1,110 +1,114 @@
 # zmk-qmk-rgb-matrix
 
-> **⚠️ 免责声明**
->
-> 本项目由 AI 生成，仍处于开发测试阶段，**不保证可用性**，请自行验证是否可用。
+> **⚠️** 本项目代码由 AI 生成，仍处于开发测试阶段，**不保证可用性**，请自行验证是否可用。
 
-在ZMK 键盘使用 QMK 的 RGB Matrix 灯效系统，基于 QMK RGB Matrix 源码，适配 ZMK。支持全部 QMK RGB Matrix 灯效。
+
+在 ZMK 键盘使用 QMK 的 RGB Matrix 灯效系统。
+
+模块使用了 QMK RGB Matrix 源码（GPL-2.0-or-later许可），故项目统一为GPL-2.0-or-later（具体文件归属参考 [LICENSE](LICENSE)，以各文件头部的版权与 SPDX 声明为准）。
+
+**最终固件必须以 GPL-2.0-or-later 兼容条款分发**。
 
 ## 核心特性
 
-- **完整 QMK 灯效集**：普通灯效、Key Reactive（按键响应）、Framebuffer（打字热力图/数字雨）三类全覆盖
-- **Kconfig 全配置**：所有参数走 Kconfig，编译期自动生成配置头文件，无需手改 C 代码
-- **开箱即用的默认值**：持久化（SETTINGS/NVS/FLASH）、HID 指示灯、内置 underglow 关闭等子系统配置已由模块默认处理
-- **`g_led_config` 兼容 QMK**：LED 布局可直接从 QMK 键盘配置复制
-- **完整 `&rgb_ug` 键码**：开关/色相/饱和度/亮度/速度/灯效循环/直选灯效（RGB_EFS）/直接设色（RGB_COLOR_HSB），Shift 反向调节
-- **设置持久化**：settings 子系统 + NVS，可整体裁剪
-- **省内存设计**：`g_led_config` 可 const 化入 Flash，独立/系统 workqueue 可选
+- **实现 QMK 所有内置灯效** ：在 zmk 中适配了 QMK RGB Matrix 系统，可以配置启用的灯效。
+- **使用 `&rgb_ug` 键码控制** ：实现了所有`&rgb_ug` 键码的功能，按Shift可反向调节，减少控制占用按键数。
+- Kconfig 配置，尽量少的配置项：大部分参数使用Kconfig配置，自动转换为#define定义，除了与键盘强相关的配置和灯效列表，其他配置项都可以使用默认值
+- **QMK 兼容**：g_led_config、rgb_matrix_indicators_advanced_user 与 QMK 格式一致
 
-## 架构
+## 快速接入
 
-```
-zmk-qmk-rgb-matrix/
-├── CMakeLists.txt               # 编译模块源码 + 生成 rgb_matrix_generated_config.h
-├── Kconfig                      # 全部 RGB Matrix 参数的 Kconfig 定义
-├── zephyr/module.yml            # 模块元数据
-├── west.yml                     # west manifest
-├── LICENSE                      # 双许可证（MIT + GPL-2.0-or-later）
-│
-└── src/rgb_matrix/
-    ├── rgb_matrix.h             # 公共 API（键盘仓 keymap.c 的唯一 include 入口）
-    ├── rgb_matrix.c             # 控制器核心（状态机、渲染、按键事件）
-    ├── rgb_matrix_behavior.c    # &rgb_ug 行为驱动 + 设置持久化 + 按键监听
-    ├── rgb_matrix_types.h       # 类型定义（led_config_t 等）
-    ├── qmk_compat.c/.h          # QMK API 兼容层
-    ├── post_config.h            # Key Reactive / Framebuffer 宏 + position→(row,col) 映射
-    └── utils.c/.h               # 数学工具函数
-    └── animations/              # 灯效实现
-        ├── rgb_matrix_effects.inc
-        ├── *_anim.h
-        └── runners/
-            ├── rgb_matrix_runners.inc
-            └── effect_runner_*.h
-
-snippets/
-└── rgb_matrix/CMakeLists.txt    # 键盘仓 keymap.c 注入与包含路径
-```
-
-## 机制概览
-
-| 机制 | 说明 |
-|------|------|
-| **Kconfig → C 宏** | 模块 CMake 读取 Kconfig 值，自动生成 `rgb_matrix_generated_config.h` 注入编译 |
-| **LED 布局** | 键盘仓 `keymap.c` 提供 `g_led_config`（矩阵映射 + 物理坐标 + 标志位），每键盘独立定义 |
-| **灯效选择** | `CONFIG_RGB_MATRIX_EFFECT_<NAME>=y` 启用，自动展开为 `#define ENABLE_RGB_MATRIX_<NAME>` |
-| **键码控制** | `rgb_matrix_behavior.c` 以行为驱动接管 `&rgb_ug`（与 ZMK 内置驱动同节点、互斥编译），覆盖全部 15 个 RGB 命令，Shift 反向调节 |
-| **持久化** | settings 子系统（NVS 后端）默认启用，`CONFIG_RGB_MATRIX_PERSISTENCE=n` 可整体裁剪 |
-| **HID 指示灯** | `CONFIG_ZMK_HID_INDICATORS` 默认启用，未启用时 `host_keyboard_led_state()` 不编译 |
-| **const 布局** | `CONFIG_RGB_LED_CONFIG_CONST=y` 时 `g_led_config` 声明为 const，节省 RAM |
-
-## 快速接入（三步）
+仅需要修改/创建四个文件, 完整步骤见 [项目使用文档](项目使用文档.md)，全部参数见 [配置项表](RGB_Matrix_配置项表.md)。
 
 ```yaml
 # 1. config/west.yml 添加模块
-projects:
-  - name: zmk-qmk-rgb-matrix
-    remote: mykeyboard
-    revision: main
-    path: modules/rgb-matrix
+# manifest:
+#   defaults:
+#     revision: main
+#   remotes:
+    # - name: zmkfirmware
+    #   url-base: https://github.com/zmkfirmware
+    - name: bvbhu-zmk-qmk-rgb-matrix # 可以修改，但要与projects.remote一致
+      url-base: https://github.com/bvbhu
+#   projects:
+    # - name: zmk
+    #   remote: zmkfirmware
+    #   import: app/west.yml
+    - name: zmk-qmk-rgb-matrix
+      remote: bvbhu-zmk-qmk-rgb-matrix
+      revision: main
+      path: modules/rgb-matrix
+#   self:
+#     path: config
 ```
 
 ```conf
-# 2. config/<keyboard>.conf — 仅需必填项
-CONFIG_RGB_MATRIX_ROWS=5
-CONFIG_RGB_MATRIX_COLS=15
-CONFIG_RGB_MATRIX_LED_COUNT=69
-CONFIG_RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT=y
+# 2. config/<keyboard>.conf — 配置必须项
+# 矩阵行数
+CONFIG_RGB_MATRIX_ROWS=6
+# 矩阵列数
+CONFIG_RGB_MATRIX_COLS=16
+# 灯珠数量（非分体）
+CONFIG_RGB_MATRIX_LED_COUNT=96
+# 分体键盘需要分别定义左右半的灯珠数量（非分体无需定义）
+RGB_MATRIX_SPLIT_LED_COUNT_LEFT=48
+RGB_MATRIX_SPLIT_LED_COUNT_RIGHT=48
+
+# 配置LED 驱动（视硬件与 Zephyr 版本按需选择）----
+CONFIG_WS2812_STRIP=y               # WS2812 驱动（示例，按实际硬件调整）
+
+# 启用一些灯效（以下仅是部分）
+CONFIG_RGB_MATRIX_EFFECT_CYCLE_LEFT_RIGHT=y # 默认灯效的默认值，建议保留
+CONFIG_RGB_MATRIX_EFFECT_GRADIENT_UP_DOWN=y
+CONFIG_RGB_MATRIX_EFFECT_BREATHING=y
+CONFIG_RGB_MATRIX_EFFECT_CYCLE_ALL=y
+CONFIG_RGB_MATRIX_EFFECT_CYCLE_PINWHEEL=y
 ```
 
 ```c
 // 3. config/keymap.c 定义 LED 布局
 #include <rgb_matrix.h>
-led_config_t g_led_config = { /* 矩阵映射 / 物理坐标 / 标志位 */ };
+led_config_t g_led_config =
+{
+    {
+        /* [0] matrix_co[RGB_MATRIX_ROWS][RGB_MATRIX_COLS]：矩阵位置 → 灯珠编号，无 LED 填 NO_LED */
+        { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 },
+        /* ... 其余行 ... */
+    },
+    {
+        /* [1] point[LED_COUNT]：每颗 LED 物理坐标 {x, y}，范围 0~255 ,注意按照灯珠编号顺序填写而不是行列顺序*/
+        { 0, 64 }, { 16, 64 }, { 32, 64 }, /* ... */
+    },
+    {
+        /* [2] flags[LED_COUNT]：建议统一使用键位灯4，mod灯1仅ALPHAS_MODS灯效有意义，也按灯珠编号顺序*/
+        4, 4, 4, 4, 4, 4, /* ... */
+    }
+}
 ```
 
-详细步骤（设备树、持久化分区、分体键盘等）见 [适配指南](RGB_Matrix_适配指南.md)，全部参数见 [配置项表](RGB_Matrix_配置项表.md)。
+```dts
+// 4. config/<keyboard>.dtsi 或 overlay — 设备树配置
+/ {
+    chosen {
+        zephyr,settings-partition = &storage_partition;  /* 持久化（默认启用）*/
+        zmk,kscan = &kscan0;
+        zmk,matrix_transform = &default_transform;       /* Key Reactive / Framebuffer 灯效必需 */
+        zmk,underglow = &led_strip;                      /* RGB Matrix 从该节点获取 LED 设备，必需 */
+    };
+};
 
-## 两把键盘示例
-
-| 参数 | silicon65（nRF52840） | TL96F072v2（STM32F072） |
-|------|----------------------|------------------------|
-| ROWS / COLS | 5 × 15 | 6 × 16 |
-| LED_COUNT | 69 | 96 |
-| CENTER | (108, 32) | (112, 32) |
-| FLUSH_LIMIT | 16 ms | 33 ms |
-| WORKQ_STACK | 2048 | 640 |
-| LED_CONFIG_CONST | 否 | 是 |
-| Key Reactive / Framebuffer | 未启用 | 启用 |
-
-## 许可证
-
-本模块全部文件使用同一许可证（逐文件归属见 [LICENSE](LICENSE)，以各文件头部的版权与 SPDX 声明为准）：
-
-| 许可证 | 覆盖文件 |
-|--------|----------|
-| GPL-2.0-or-later | 全部文件 — `rgb_matrix.c/.h`（QMK 核心移植）、`rgb_matrix_types.h`、`post_config.h`、`rgb_matrix_behavior.c`（行为驱动+持久化）、`qmk_compat.c/.h`（QMK API 兼容）、`utils.c/.h`（数学工具）、`animations/` 全部灯效与 runners（含 HorrorTroll、@filterpaper、@art-was-here 等第三方贡献）、构建脚本（CMakeLists/Kconfig/module.yml/west.yml/snippets） |
-
-**最终固件必须以 GPL-2.0-or-later 兼容条款分发**。
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        storage_partition: partition@1e800 {
+            label = "storage";
+            reg = <0x0001e800 DT_SIZE_K(6)>;
+        };
+    };
+};
+```
 
 ## 更多资料
 
